@@ -20,7 +20,13 @@
       </ul>
     </nav>
     <div class="lietotajs">
-      <span>{{ lietotajs.vards }}</span>
+      <span>{{ lietotajs.vards }} · {{ lomu_nosaukumi[lietotajs.loma] }}</span>
+      {% if macibu_rezims() %}
+      <form method="post" action="/macibu-rezims/loma" class="lomas-maina">
+        <input type="hidden" name="loma" value="{{ 'darbinieks' if lietotajs.loma == 'vaditajs' else 'vaditajs' }}">
+        <button type="submit" class="sekundara">Mācību režīms: skatīt kā {{ 'darbiniekam' if lietotajs.loma == 'vaditajs' else 'vadītājam' }}</button>
+      </form>
+      {% endif %}
       <form method="post" action="/auth/logout"><button type="submit" class="sekundara">Atslēgties</button></form>
     </div>
     {% endif %}

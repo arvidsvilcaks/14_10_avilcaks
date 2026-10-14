@@ -1,6 +1,7 @@
 """CRM galapunkti līgumā docs/openapi.yaml atbilst lietotnei un kursa noteikumiem."""
 
 import importlib.util
+import re
 from pathlib import Path
 
 import yaml
@@ -21,9 +22,14 @@ def _lint_modulis():
     return modulis
 
 
+def _veidne(cels: str) -> str:
+    """Parametru nosaukumi neietekmē salīdzināšanu: /a/{id} == /a/{a_id}."""
+    return re.sub(r"\{[^}]+\}", "{}", cels)
+
+
 def _crm_operacijas(ligums: dict) -> set[tuple[str, str]]:
     return {
-        (metode.upper(), cels)
+        (metode.upper(), _veidne(cels))
         for cels, operacijas in ligums["paths"].items()
         if cels not in IESNIEGUMU_API
         for metode in operacijas
@@ -38,7 +44,7 @@ def test_crm_operacijas_atbilst_kursa_noteikumiem():
 
 def test_katra_liguma_operacija_ir_lietotne(lietotne):
     marsruti = {
-        (metode.upper(), cels)
+        (metode.upper(), _veidne(cels))
         for cels, operacijas in lietotne.openapi()["paths"].items()
         for metode in operacijas
     }

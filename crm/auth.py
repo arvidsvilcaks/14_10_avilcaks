@@ -2,7 +2,7 @@
 
 import re
 import sqlite3
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
@@ -32,10 +32,19 @@ Epasts = Annotated[str, StringConstraints(max_length=254), AfterValidator(_epast
 Vards = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 
 
+Loma = Literal["darbinieks", "vaditajs"]
+LOMU_NOSAUKUMI = {"darbinieks": "Darbinieks", "vaditajs": "Vadītājs"}
+
+
 class Lietotajs(BaseModel):
     id: int
     vards: str
     epasts: str
+    loma: Loma
+
+    @property
+    def ir_vaditajs(self) -> bool:
+        return self.loma == "vaditajs"
 
 
 class Registracija(BaseModel):
@@ -50,7 +59,7 @@ class Pieslegsanas(BaseModel):
 
 
 def _no_rindas(rinda: sqlite3.Row) -> Lietotajs:
-    return Lietotajs(id=rinda["id"], vards=rinda["vards"], epasts=rinda["epasts"])
+    return Lietotajs(id=rinda["id"], vards=rinda["vards"], epasts=rinda["epasts"], loma=rinda["loma"])
 
 
 def lietotajs_pec_id(lietotaja_id: int) -> Lietotajs | None:
@@ -60,7 +69,7 @@ def lietotajs_pec_id(lietotaja_id: int) -> Lietotajs | None:
 
 
 def pieslegts_lietotajs(request: Request) -> Lietotajs:
-    """Atkarība aizsargātiem maršrutiem. Lietotāju nolasa no datubāzes katrā pieprasījumā."""
+    """Atkarība aizsargātiem maršrutiem. Lietotāju un lomu nolasa no datubāzes katrā pieprasījumā."""
     lietotaja_id = request.session.get("lietotajs_id")
     lietotajs = lietotajs_pec_id(lietotaja_id) if isinstance(lietotaja_id, int) else None
     if lietotajs is None:
@@ -71,6 +80,15 @@ def pieslegts_lietotajs(request: Request) -> Lietotajs:
 
 
 Pieslegts = Annotated[Lietotajs, Depends(pieslegts_lietotajs)]
+
+
+def pieslegts_vaditajs(lietotajs: Pieslegts) -> Lietotajs:
+    if not lietotajs.ir_vaditajs:
+        raise HTTPException(403, "Darbība atļauta tikai vadītājam")
+    return lietotajs
+
+
+Vaditajs = Annotated[Lietotajs, Depends(pieslegts_vaditajs)]
 
 
 @router.get("/", include_in_schema=False)

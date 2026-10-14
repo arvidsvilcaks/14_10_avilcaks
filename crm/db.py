@@ -29,6 +29,16 @@ def savienojums() -> Iterator[sqlite3.Connection]:
         conn.close()
 
 
+# Kolonnas, kas pievienotas pēc tabulas izveides: (tabula, kolonna, definīcija).
+MIGRACIJAS = [
+    ("lietotaji", "loma", "TEXT NOT NULL DEFAULT 'darbinieks' CHECK (loma IN ('darbinieks', 'vaditajs'))"),
+]
+
+
 def inicializet() -> None:
     with savienojums() as conn:
         conn.executescript((SAKNE / "shema.sql").read_text(encoding="utf-8"))
+        for tabula, kolonna, definicija in MIGRACIJAS:
+            esosas = {rinda["name"] for rinda in conn.execute(f"PRAGMA table_info({tabula})")}
+            if kolonna not in esosas:
+                conn.execute(f"ALTER TABLE {tabula} ADD COLUMN {kolonna} {definicija}")

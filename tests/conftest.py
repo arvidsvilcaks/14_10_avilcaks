@@ -46,3 +46,17 @@ def pieslegt(klients: TestClient, epasts: str, vards: str = "Testa Lietotājs") 
     atbilde = klients.post("/auth/login", json={"epasts": epasts, "parole": PAROLE})
     assert atbilde.status_code == 200, atbilde.text
     return atbilde.json()["lietotajs"]
+
+
+def iestatit_lomu(epasts: str, loma: str) -> None:
+    """Maina lomu tieši datubāzē (kā sākumdati vai administrators)."""
+    from crm.db import savienojums
+
+    with savienojums() as conn:
+        conn.execute("UPDATE lietotaji SET loma = ? WHERE epasts = ?", (loma, epasts))
+
+
+def pieslegt_vaditaju(klients: TestClient, epasts: str = "vaditajs@example.com", vards: str = "Vadītājs Paraugs") -> dict:
+    lietotajs = pieslegt(klients, epasts, vards)
+    iestatit_lomu(epasts, "vaditajs")
+    return {**lietotajs, "loma": "vaditajs"}

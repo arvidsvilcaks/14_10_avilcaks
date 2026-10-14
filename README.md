@@ -62,3 +62,5 @@ Vides mainīgie:
 | `CRM_DB_PATH` | SQLite fails (noklusējums `data/crm.db`, netiek iekļauts repozitorijā) |
 | `CRM_SESSION_SECRET` | Sesijas parakstīšanas atslēga; bez tās sesijas beidzas pēc servera restarta |
 | `CRM_HTTPS` | `1` — sesijas sīkdatne tikai pa HTTPS |
+| `CRM_MACIBU_REZIMS` | `1` — lietotājs var pārslēgt savu lomu (mācībām, F9.12) |
+| `CRM_SAKUMDATU_PAROLE` | Parole sākumdatu lietotājiem: `CRM_SAKUMDATU_PAROLE=... make seed` |

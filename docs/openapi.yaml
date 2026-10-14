@@ -28,6 +28,10 @@ tags:
       Sesija ir parakstīta sīkdatne `crm_sesija` (8 h, `HttpOnly`, `SameSite=Lax`).
       Katru `POST` var sūtīt kā JSON vai kā HTML formu
       (`application/x-www-form-urlencoded`); formai atbilde ir HTML lapa vai 303 novirzīšana.
+  - name: Lomas
+    description: |
+      Lomas `darbinieks` un `vaditajs` (N3, CR-5). Lomu nolasa no datubāzes
+      katrā pieprasījumā, tāpēc izmaiņa stājas spēkā nākamajā pieprasījumā.
 
 paths:
   /health:
@@ -205,6 +209,91 @@ paths:
         '5XX':
           $ref: '#/components/responses/ServerError'
 
+  /lietotaji/{id}/loma:
+    patch:
+      tags: [Lomas]
+      operationId: changeUserRole
+      summary: Mainīt lietotāja lomu (CR-5, tikai vadītājs)
+      description: |
+        Jauns lietotājs vienmēr ir `darbinieks`. Lomu maina tikai vadītājs.
+        Ja izmaiņas rezultātā sistēmā nepaliktu neviena vadītāja — 409.
+      security:
+        - sesija: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LomasMaina'
+      responses:
+        '200':
+          description: Loma mainīta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lietotajs'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /macibu-rezims/loma:
+    post:
+      tags: [Lomas]
+      operationId: switchOwnRole
+      summary: Pārslēgt savu lomu mācību režīmā (CR-5, F9.12)
+      description: |
+        Pieejams tikai, ja serverim iestatīts `CRM_MACIBU_REZIMS=1`; citādi 403.
+        Ļauj izmēģināt abu lomu skatus.
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LomasMaina'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LomasMaina'
+      responses:
+        '200':
+          description: Loma pārslēgta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lietotajs'
+        '303':
+          description: (HTML forma) Loma pārslēgta, novirza uz `/panelis`
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
 components:
   securitySchemes:
     sesija:
@@ -329,7 +418,7 @@ components:
     Lietotajs:
       type: object
       description: CRM lietotājs (CR-4)
-      required: [id, vards, epasts]
+      required: [id, vards, epasts, loma]
       properties:
         id:
           type: integer
@@ -341,6 +430,21 @@ components:
           type: string
           format: email
           example: anna@example.com
+        loma:
+          $ref: '#/components/schemas/Loma'
+
+    Loma:
+      type: string
+      description: Lietotāja loma (N3, CR-5)
+      enum: [darbinieks, vaditajs]
+      example: darbinieks
+
+    LomasMaina:
+      type: object
+      required: [loma]
+      properties:
+        loma:
+          $ref: '#/components/schemas/Loma'
 
     Registracija:
       type: object

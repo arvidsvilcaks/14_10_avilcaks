@@ -20,5 +20,5 @@
 | ⬜ | MI-2 | Organizāciju prioritizācija «pēc sadarbības potenciāla» |
 | ⬜ | N1 | Pieejamība |
 | ⬜ | N2 | Personas dati (VDAR) |
-| ⬜ | N3 | Lomas |
+| ✅ | N3 | Lomas |
 | ⬜ | N4 | Tehnoloģijas un laiks |
