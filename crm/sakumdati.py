@@ -95,8 +95,34 @@ def mijiedarbibas(conn: sqlite3.Connection) -> None:
         )
 
 
+# (dienas līdz termiņam, statuss, apraksts); negatīvas dienas — termiņš pagātnē.
+PIEPRASIJUMI = [
+    (-5, "Darbā", "Lūgums sniegt informāciju par nomas noteikumiem."),
+    (-2, "Jauns", "Jautājums par atkritumu izvešanas grafiku."),
+    (-1, "Atbildēts", "Pieprasījums pēc sadarbības līguma kopijas."),
+    (0, "Jauns", "Lūgums apstiprināt pasākuma norises vietu."),
+    (1, "Darbā", "Piedāvājums kopīgam projektam."),
+    (3, "Jauns", "Jautājums par ceļa remontu pie uzņēmuma."),
+    (7, "Darbā", "Lūgums sagatavot atbalsta vēstuli."),
+    (14, "Jauns", "Jautājums par tirgus vietu nomu."),
+]
+
+
+def pieprasijumi(conn: sqlite3.Connection) -> None:
+    if not _tuksa(conn, "pieprasijumi"):
+        return
+    organizacijas = conn.execute("SELECT id, atbildigais_id FROM organizacijas ORDER BY id").fetchall()
+    sodien = laiks.sodien()
+    for i, (dienas, statuss, apraksts) in enumerate(PIEPRASIJUMI):
+        org = organizacijas[i % len(organizacijas)]
+        conn.execute(
+            "INSERT INTO pieprasijumi (organizacija_id, apraksts, termins, statuss, atbildigais_id) VALUES (?, ?, ?, ?, ?)",
+            (org["id"], apraksts, (sodien + timedelta(days=dienas)).isoformat(), statuss, org["atbildigais_id"]),
+        )
+
+
 # Datu sadaļas pēc lietotājiem, atkarību secībā.
-SADALAS: list = [organizacijas, mijiedarbibas]
+SADALAS: list = [organizacijas, mijiedarbibas, pieprasijumi]
 
 
 def ieladet(parole: str) -> None:

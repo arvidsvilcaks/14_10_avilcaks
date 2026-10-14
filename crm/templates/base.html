@@ -13,7 +13,7 @@
     {% if lietotajs %}
     <nav aria-label="Galvenā navigācija">
       <ul>
-        {% set sadalas = [("/panelis", "Panelis"), ("/organizacijas", "Organizācijas"), ("/mijiedarbibas", "Mijiedarbības")] %}
+        {% set sadalas = [("/panelis", "Panelis"), ("/organizacijas", "Organizācijas"), ("/mijiedarbibas", "Mijiedarbības"), ("/pieprasijumi", "Pieprasījumi")] %}
         {% for adrese, nosaukums in sadalas %}
         <li><a href="{{ adrese }}"{% if request.url.path == adrese or request.url.path.startswith(adrese ~ "/") %} aria-current="page"{% endif %}>{{ nosaukums }}</a></li>
         {% endfor %}

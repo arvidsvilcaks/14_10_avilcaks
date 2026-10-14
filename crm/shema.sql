@@ -31,3 +31,14 @@ CREATE TABLE IF NOT EXISTS mijiedarbibas (
 );
 CREATE INDEX IF NOT EXISTS mijiedarbibas_darbinieks ON mijiedarbibas(darbinieks_id, datums);
 CREATE INDEX IF NOT EXISTS mijiedarbibas_organizacija ON mijiedarbibas(organizacija_id, datums);
+
+CREATE TABLE IF NOT EXISTS pieprasijumi (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organizacija_id INTEGER NOT NULL REFERENCES organizacijas(id),
+    apraksts TEXT NOT NULL,
+    termins TEXT NOT NULL,
+    statuss TEXT NOT NULL DEFAULT 'Jauns' CHECK (statuss IN ('Jauns', 'Darbā', 'Atbildēts')),
+    atbildigais_id INTEGER NOT NULL REFERENCES lietotaji(id),
+    izveidots TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS pieprasijumi_atbildigais ON pieprasijumi(atbildigais_id, termins);

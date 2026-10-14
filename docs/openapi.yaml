@@ -40,6 +40,11 @@ tags:
     description: |
       Mijiedarbību žurnāls (F3, CR-7). Darbinieks redz savas mijiedarbības,
       vadītājs — visas. Datums nedrīkst būt nākotnē (Europe/Riga).
+  - name: Pieprasījumi
+    description: |
+      Pieprasījumi no organizācijām (F4, CR-8). Darbinieks redz un maina savus,
+      vadītājs — visus. **Kavēts:** termiņš pirms šodienas (Europe/Riga) un
+      statuss nav `Atbildēts` (F9.7).
 
 paths:
   /health:
@@ -546,6 +551,126 @@ paths:
         '5XX':
           $ref: '#/components/responses/ServerError'
 
+  /pieprasijumi:
+    get:
+      tags: [Pieprasījumi]
+      operationId: listRequests
+      summary: Pieprasījumu saraksts (CR-8)
+      description: Sakārtoti pēc termiņa. Darbiniekam — tikai savi, vadītājam — visi.
+      security:
+        - sesija: []
+      parameters:
+        - name: statuss
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/PieprasijumaStatuss'
+        - name: kavets
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Pieprasījumi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pieprasijums'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Pieprasījumi]
+      operationId: createRequest
+      summary: Izveidot pieprasījumu (CR-8)
+      description: |
+        Statuss vienmēr `Jauns`. Atbildīgais pēc noklusējuma ir izveidotājs;
+        citu atbildīgo var norādīt tikai vadītājs (citādi 403).
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PieprasijumsIevade'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PieprasijumsIevade'
+      responses:
+        '201':
+          description: Pieprasījums izveidots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pieprasijums'
+        '303':
+          description: (HTML forma) Novirza uz `/pieprasijumi`
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /pieprasijumi/{id}:
+    patch:
+      tags: [Pieprasījumi]
+      operationId: updateRequest
+      summary: Mainīt pieprasījumu (CR-8)
+      description: |
+        Maina tikai norādītos laukus. Mainīt var atbildīgais vai vadītājs;
+        `atbildigais_id` — tikai vadītājs. Statuss var atgriezties no `Atbildēts` uz `Darbā`.
+      security:
+        - sesija: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PieprasijumaLabojums'
+      responses:
+        '200':
+          description: Pieprasījums pēc izmaiņām
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pieprasijums'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
 components:
   securitySchemes:
     sesija:
@@ -837,6 +962,70 @@ components:
           example: Darbiniece Viena
         kopsavilkums:
           type: string
+
+    PieprasijumaStatuss:
+      type: string
+      enum: [Jauns, Darbā, Atbildēts]
+      example: Darbā
+
+    PieprasijumsIevade:
+      type: object
+      required: [organizacija_id, apraksts, termins]
+      properties:
+        organizacija_id:
+          type: integer
+        apraksts:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        termins:
+          type: string
+          format: date
+          example: '2026-10-20'
+        atbildigais_id:
+          type: integer
+          description: Tikai vadītājs var norādīt citu lietotāju
+
+    PieprasijumaLabojums:
+      type: object
+      minProperties: 1
+      properties:
+        apraksts:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        termins:
+          type: string
+          format: date
+        statuss:
+          $ref: '#/components/schemas/PieprasijumaStatuss'
+        atbildigais_id:
+          type: integer
+
+    Pieprasijums:
+      type: object
+      required: [id, organizacija_id, organizacijas_nosaukums, apraksts, termins, statuss, atbildigais_id, atbildiga_vards, kavets]
+      properties:
+        id:
+          type: integer
+        organizacija_id:
+          type: integer
+        organizacijas_nosaukums:
+          type: string
+        apraksts:
+          type: string
+        termins:
+          type: string
+          format: date
+        statuss:
+          $ref: '#/components/schemas/PieprasijumaStatuss'
+        atbildigais_id:
+          type: integer
+        atbildiga_vards:
+          type: string
+        kavets:
+          type: boolean
+          description: Termiņš pirms šodienas un statuss nav `Atbildēts`
 
     Error:
       type: object
