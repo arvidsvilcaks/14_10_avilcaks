@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block virsraksts %}Piekļūstamības paziņojums{% endblock %}
+{% block saturs %}
+<div class="teksts">
+<h1>Piekļūstamības paziņojums</h1>
+<p>Ezermalas novada pašvaldība (izdomāta) apņemas nodrošināt savas tīmekļvietnes „Ezermalas CRM” piekļūstamību saskaņā ar Ministru kabineta 2020. gada 14. jūlija noteikumiem Nr. 445 „Kārtība, kādā iestādes ievieto informāciju internetā” un standartu EN 301 549 (WCAG 2.2 AA līmenis).</p>
+
+<h2>Atbilstības statuss</h2>
+<p>Tīmekļvietne <strong>daļēji atbilst</strong> standarta prasībām. Neatbilstības ir uzskaitītas tālāk.</p>
+
+<h2>Nepiekļūstams saturs</h2>
+<ul>
+  <li>Automātiska axe skenēšana vēl nav iekļauta nepārtrauktās integrācijas pārbaudēs; pārbaude veikta daļēji, ar automātiskiem HTML struktūras testiem.</li>
+  <li>Datuma lauki izmanto pārlūka iebūvēto datuma izvēli, kuras paziņojumi ekrāna lasītājos atšķiras atkarībā no pārlūka.</li>
+  <li>MI ģenerētie ieteikumi (MI-1) ir tikai latviešu valodā, un to valodas skaidrība nav pārbaudīta.</li>
+</ul>
+
+<h2>Kā tika veikta izvērtēšana</h2>
+<p>Pašnovērtējums: pārbaude ar tastatūru, 200 % mērogā, kontrasta pārbaude krāsu tokeniem un automātiskie testi, kas pārbauda virsrakstu struktūru, orientierus, tabulu parakstus un formu etiķetes.</p>
+
+<h2>Atsauksmes un saziņa</h2>
+<p>Ja pamanāt piekļūstamības problēmu, rakstiet uz <a href="mailto:pieejamiba@example.com">pieejamiba@example.com</a> vai zvaniet <a href="tel:+37160000000">+371 60000000</a> (darba dienās 9.00–17.00). Atbildi sniegsim 10 darba dienu laikā.</p>
+<p>Ja atbilde jūs neapmierina, varat iesniegt sūdzību Valsts reģionālās attīstības aģentūrai.</p>
+
+<h2>Paziņojuma datumi</h2>
+<p>Paziņojums sagatavots <time datetime="{{ sagatavots.isoformat() }}">{{ sagatavots | garais_datums }}</time>, pēdējo reizi pārskatīts <time datetime="{{ parskatits.isoformat() }}">{{ parskatits | garais_datums }}</time>.</p>
+</div>
+{% endblock %}

@@ -81,7 +81,7 @@ def test_vaditajs_redz_visus_un_aktivitati(divi_darbinieki, jauns_klients):  # A
     assert "kavēts-Anna" in lapa and "kavēts-Juris" in lapa
     assert "Atbildīgais</th>" in lapa and "Darbinieks</th>" in lapa
     assert "Aktivitāte pa darbiniekiem" in lapa
-    assert "Atvērt pilnu pārskatu" not in lapa  # F7 vēl nav
+    assert '<a href="/parskats">Atvērt pilnu pārskatu</a>' in lapa  # F7
     dati = vaditajs.get("/api/panelis").json()
     assert dati["raditaji"]["kaveti_pieprasijumi"] == 2
     aktivitate = {a["vards"]: a for a in dati["aktivitate"]}
@@ -192,7 +192,7 @@ def test_pieejamibas_struktura(divi_darbinieki, jauns_klients):  # AC14 (struktu
         assert orientieris in lapa
     assert lapa.count("<h1>") == 1
     h2 = re.findall(r"<h2[^>]*>(.*?)</h2>", lapa)
-    assert h2 == ["Rādītāji visā sistēmā", "Mani uzdevumi šodien", "Kavētie un tuvākie pieprasījumi",
+    assert h2 == ["Rādītāji visā sistēmā", "Mani uzdevumi šodien", "Atgādinājumi", "Kavētie un tuvākie pieprasījumi",
                   "Pēdējās mijiedarbības", "Ātrās darbības", "Aktivitāte pa darbiniekiem"]
     assert lapa.count("<table") == lapa.count("<caption>")
     assert not re.search(r"<th(?=[ >])(?![^>]*scope=)[^>]*>", lapa)
@@ -206,7 +206,7 @@ def test_atras_darbibas(klients):
     for adrese in ("/organizacijas/jauna", "/mijiedarbibas/jauna", "/pieprasijumi/jauns"):
         assert f'href="{adrese}"' in lapa
         assert klients.get(adrese, headers=HTML).status_code == 200
-    assert 'action="/organizacijas" role="search"' in lapa
+    assert 'action="/meklet" role="search"' in lapa  # F6
 
 
 def test_sakumdati_lapa_atrak_par_1_s(lietotne, klients, monkeypatch):  # AC15

@@ -121,7 +121,8 @@ def pieprasijumi(conn: sqlite3.Connection) -> None:
         )
 
 
-# (lietotāja e-pasts, dienas līdz termiņam, izpildīts, nosaukums)
+# (lietotāja e-pasts, dienas līdz termiņam, izpildīts, nosaukums); atgādinājums — 2 dienas pirms termiņa
+# uzdevumiem, kuru termiņš ir nākotnē.
 UZDEVUMI = [
     ("darbinieks1@example.com", -2, False, "Piezvanīt par līguma pagarinājumu"),
     ("darbinieks1@example.com", 0, False, "Sagatavot tikšanās darba kārtību"),
@@ -144,14 +145,37 @@ def uzdevumi(conn: sqlite3.Connection) -> None:
             "SELECT id FROM organizacijas WHERE atbildigais_id = ? ORDER BY id LIMIT 1", (lietotaja_id,)
         ).fetchone()
         conn.execute(
-            "INSERT INTO uzdevumi (nosaukums, termins, izpildits, atbildigais_id, organizacija_id) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO uzdevumi (nosaukums, termins, izpildits, atbildigais_id, organizacija_id, atgadinat)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
             (nosaukums, (sodien + timedelta(days=dienas)).isoformat(), int(izpildits), lietotaja_id,
-             organizacija["id"] if organizacija else None),
+             organizacija["id"] if organizacija else None,
+             (sodien + timedelta(days=dienas - 2)).isoformat() if dienas > 0 else None),
+        )
+
+
+KONTAKTU_VARDI = [
+    "Anna Ozola", "Jānis Kalniņš", "Līga Bērziņa", "Mārtiņš Liepa", "Ilze Krūmiņa",
+    "Pēteris Zariņš", "Dace Vītola", "Andris Eglītis", "Inese Siliņa", "Raitis Pētersons",
+]
+KONTAKTU_AMATI = ["Valdes loceklis", "Projektu vadītāja"]
+
+
+def kontaktpersonas(conn: sqlite3.Connection) -> None:
+    """20 sintētiskas kontaktpersonas — divas katrai organizācijai; e-pasti example.com domēnā."""
+    if not _tuksa(conn, "kontaktpersonas"):
+        return
+    organizacijas = [r["id"] for r in conn.execute("SELECT id FROM organizacijas ORDER BY id").fetchall()]
+    for i in range(20):
+        vards = KONTAKTU_VARDI[i % len(KONTAKTU_VARDI)]
+        conn.execute(
+            "INSERT INTO kontaktpersonas (organizacija_id, vards, amats, epasts, talrunis) VALUES (?, ?, ?, ?, ?)",
+            (organizacijas[i % len(organizacijas)], vards, KONTAKTU_AMATI[i % 2],
+             f"kontakts{i + 1}@example.com", f"+371 2000{i:04d}"),
         )
 
 
 # Datu sadaļas pēc lietotājiem, atkarību secībā.
-SADALAS: list = [organizacijas, mijiedarbibas, pieprasijumi, uzdevumi]
+SADALAS: list = [organizacijas, kontaktpersonas, mijiedarbibas, pieprasijumi, uzdevumi]
 
 
 def ieladet(parole: str) -> None:

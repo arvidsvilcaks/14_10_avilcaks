@@ -53,3 +53,23 @@ CREATE TABLE IF NOT EXISTS uzdevumi (
     izveidots TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS uzdevumi_atbildigais ON uzdevumi(atbildigais_id, izpildits, termins);
+
+CREATE TABLE IF NOT EXISTS kontaktpersonas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organizacija_id INTEGER NOT NULL REFERENCES organizacijas(id) ON DELETE CASCADE,
+    vards TEXT NOT NULL,
+    amats TEXT,
+    epasts TEXT,
+    talrunis TEXT,
+    izveidots TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS kontaktpersonas_organizacija ON kontaktpersonas(organizacija_id);
+
+-- N2: kurš un kad atvēra organizācijas kartīti ar kontaktpersonu datiem.
+CREATE TABLE IF NOT EXISTS piekluves_zurnals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lietotajs_id INTEGER NOT NULL REFERENCES lietotaji(id),
+    organizacija_id INTEGER NOT NULL REFERENCES organizacijas(id) ON DELETE CASCADE,
+    laiks TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS piekluves_zurnals_laiks ON piekluves_zurnals(laiks);

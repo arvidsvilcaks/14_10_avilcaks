@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block virsraksts %}Pārskats vadītājam{% endblock %}
+{% block saturs %}
+<h1>Pārskats vadītājam</h1>
+<p>Periods: <time datetime="{{ p.no.isoformat() }}">{{ p.no | datums }}</time>–<time datetime="{{ p.lidz.isoformat() }}">{{ p.lidz | datums }}</time> ({{ p.dienas }} dienas). Pieprasījumi un uzdevumi — pašreizējais stāvoklis.</p>
+<nav aria-label="Pārskata periods">
+  <ul class="darbibas">
+    {% for d in periodi %}
+    <li><a href="/parskats?dienas={{ d }}"{% if d == p.dienas %} aria-current="page"{% endif %}>Pēdējās {{ d }} dienas</a></li>
+    {% endfor %}
+  </ul>
+</nav>
+{% if p.darbinieki %}
+<div class="tabulas-ietvars">
+  <table>
+    <caption>Darbinieku aktivitāte un slodze; pēdējā rinda — kopā</caption>
+    <thead>
+      <tr>
+        <th scope="col">Darbinieks</th>
+        <th scope="col">Zvani</th>
+        <th scope="col">E-pasti</th>
+        <th scope="col">Tikšanās</th>
+        <th scope="col">Mijiedarbības kopā</th>
+        <th scope="col">Atvērtie pieprasījumi</th>
+        <th scope="col">Kavētie pieprasījumi</th>
+        <th scope="col">Neizpildītie uzdevumi</th>
+        <th scope="col">Kavētie uzdevumi</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in p.darbinieki + [p.kopa] %}
+      <tr{% if loop.last %} class="kopa"{% endif %}>
+        <th scope="row">{{ d.vards }}</th>
+        <td>{{ d.zvani }}</td>
+        <td>{{ d.epasti }}</td>
+        <td>{{ d.tiksanas }}</td>
+        <td>{{ d.mijiedarbibas }}</td>
+        <td>{{ d.atverti_pieprasijumi }}</td>
+        <td>{{ d.kaveti_pieprasijumi }}{% if d.kaveti_pieprasijumi %} <span class="atzime kavets">Kavēts</span>{% endif %}</td>
+        <td>{{ d.neizpilditi_uzdevumi }}</td>
+        <td>{{ d.kaveti_uzdevumi }}{% if d.kaveti_uzdevumi %} <span class="atzime kavets">Kavēts</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p><a href="/pieprasijumi?kavets=true">Visi kavētie pieprasījumi</a></p>
+{% else %}
+<p class="tukss">Darbinieku vēl nav.</p>
+{% endif %}
+{% endblock %}

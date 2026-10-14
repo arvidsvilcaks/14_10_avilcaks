@@ -48,7 +48,7 @@ Sākotnējā līguma versija šo pārbaudi neiztur apzināti. Uzdevums ir pabeig
 
 ## Ezermalas CRM (F0–F9)
 
-CRM prototips ir pakotnē `crm/` (FastAPI + Jinja2 + SQLite). Prasības: `docs/prasibu_saraksts.md`, pieteikumi: `tracker/CR-4.md` … `tracker/CR-10.md`.
+CRM prototips ir pakotnē `crm/` (FastAPI + Jinja2 + SQLite). Prasības: `docs/prasibu_saraksts.md` (apraksti `docs/<ID>.md`), pieteikumi: `tracker/CR-4.md` … `tracker/CR-10.md`.
 
 ```bash
 make install   # papildu pakotnes no requirements.txt
@@ -64,3 +64,5 @@ Vides mainīgie:
 | `CRM_HTTPS` | `1` — sesijas sīkdatne tikai pa HTTPS |
 | `CRM_MACIBU_REZIMS` | `1` — lietotājs var pārslēgt savu lomu (mācībām, F9.12) |
 | `CRM_SAKUMDATU_PAROLE` | Parole sākumdatu lietotājiem: `CRM_SAKUMDATU_PAROLE=... make seed` |
+| `ANTHROPIC_API_KEY` | MI-1 ieteikumiem (vajag arī `pip install anthropic`); bez tā MI ieteikums nav pieejams, pārējais strādā |
+| `CRM_MI_MODELIS` | MI-1 modelis (noklusējums `claude-opus-5-5`) |

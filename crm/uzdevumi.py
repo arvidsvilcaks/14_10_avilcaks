@@ -1,4 +1,8 @@
-"""CR-9: uzdevumi (F5, bez atgādinājumiem)."""
+"""CR-9: uzdevumi (F5) un atgādinājumi.
+
+Atgādinājums ir datums, no kura neizpildīts uzdevums parādās paneļa blokā
+„Atgādinājumi” un uzdevumu sarakstā ar atzīmi „Atgādinājums”.
+"""
 
 import sqlite3
 from datetime import date
@@ -6,7 +10,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, StringConstraints, ValidationInfo, field_validator
+from pydantic_core import PydanticCustomError
 
 from crm import laiks
 from crm.auth import Lietotajs, Pieslegts, lietotajs_pec_id, visi_lietotaji
@@ -26,6 +31,15 @@ class UzdevumsIevade(BaseModel):
     termins: date
     organizacija_id: int | None = None
     atbildigais_id: int | None = None
+    atgadinat: date | None = None
+
+    @field_validator("atgadinat")
+    @classmethod
+    def _atgadinajums_lidz_terminam(cls, vertiba: date | None, info: ValidationInfo) -> date | None:
+        termins = info.data.get("termins")
+        if vertiba is not None and termins is not None and vertiba > termins:
+            raise PydanticCustomError("REMINDER_AFTER_DUE", "Atgādinājums nevar būt pēc termiņa.")
+        return vertiba
 
 
 class Uzdevums(BaseModel):
@@ -37,6 +51,8 @@ class Uzdevums(BaseModel):
     atbildiga_vards: str
     organizacija_id: int | None
     organizacijas_nosaukums: str | None
+    atgadinat: date | None = None
+    atgadinajums_aktivs: bool = False
 
 
 _VAICAJUMS = """
@@ -48,12 +64,18 @@ _VAICAJUMS = """
 
 
 def _no_rindas(rinda: sqlite3.Row) -> Uzdevums:
-    return Uzdevums(**{k: rinda[k] for k in Uzdevums.model_fields})
+    lauki = {k: rinda[k] for k in Uzdevums.model_fields if k != "atgadinajums_aktivs"}
+    aktivs = not rinda["izpildits"] and rinda["atgadinat"] is not None and rinda["atgadinat"] <= laiks.sodien().isoformat()
+    return Uzdevums(**lauki, atgadinajums_aktivs=aktivs)
 
 
-def atlasit(atbildigais_id: int | None = None, lidz_sodienai: bool = False) -> list[Uzdevums]:
-    """Uzdevumi pēc termiņa. `lidz_sodienai` — neizpildītie ar termiņu šodien vai agrāk."""
+def atlasit(atbildigais_id: int | None = None, lidz_sodienai: bool = False, atgadinajumi: bool = False) -> list[Uzdevums]:
+    """Uzdevumi pēc termiņa. `lidz_sodienai` — neizpildītie ar termiņu šodien vai agrāk;
+    `atgadinajumi` — neizpildītie, kuru atgādinājuma datums ir pienācis."""
     nosacijumi, parametri = [], []
+    if atgadinajumi:
+        nosacijumi.append("u.izpildits = 0 AND u.atgadinat IS NOT NULL AND u.atgadinat <= ?")
+        parametri.append(laiks.sodien().isoformat())
     if atbildigais_id is not None:
         nosacijumi.append("u.atbildigais_id = ?")
         parametri.append(atbildigais_id)
@@ -122,8 +144,9 @@ async def izveidot(request: Request, lietotajs: Pieslegts) -> Response:
         raise
     with savienojums() as conn:
         jauns_id = conn.execute(
-            "INSERT INTO uzdevumi (nosaukums, termins, atbildigais_id, organizacija_id) VALUES (?, ?, ?, ?)",
-            (dati.nosaukums, dati.termins.isoformat(), atbildigais_id, dati.organizacija_id),
+            "INSERT INTO uzdevumi (nosaukums, termins, atbildigais_id, organizacija_id, atgadinat) VALUES (?, ?, ?, ?, ?)",
+            (dati.nosaukums, dati.termins.isoformat(), atbildigais_id, dati.organizacija_id,
+             dati.atgadinat.isoformat() if dati.atgadinat else None),
         ).lastrowid
     if forma:
         return RedirectResponse("/uzdevumi", status_code=303)

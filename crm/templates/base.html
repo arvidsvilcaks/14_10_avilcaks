@@ -13,7 +13,9 @@
     {% if lietotajs %}
     <nav aria-label="Galvenā navigācija">
       <ul>
-        {% set sadalas = [("/panelis", "Panelis"), ("/organizacijas", "Organizācijas"), ("/mijiedarbibas", "Mijiedarbības"), ("/pieprasijumi", "Pieprasījumi"), ("/uzdevumi", "Uzdevumi")] %}
+        {% set sadalas = [("/panelis", "Panelis"), ("/organizacijas", "Organizācijas"), ("/mijiedarbibas", "Mijiedarbības"), ("/pieprasijumi", "Pieprasījumi"), ("/uzdevumi", "Uzdevumi"), ("/meklet", "Meklēt")] %}
+        {% set sadalas = sadalas + [("/prioritates", "Prioritātes")] %}
+        {% if lietotajs.ir_vaditajs %}{% set sadalas = sadalas + [("/parskats", "Pārskats"), ("/piekluves-zurnals", "Piekļuves žurnāls")] %}{% endif %}
         {% for adrese, nosaukums in sadalas %}
         <li><a href="{{ adrese }}"{% if request.url.path == adrese or request.url.path.startswith(adrese ~ "/") %} aria-current="page"{% endif %}>{{ nosaukums }}</a></li>
         {% endfor %}
@@ -35,7 +37,7 @@
     {% block saturs %}{% endblock %}
   </main>
   <footer class="kaje">
-    <p>Ezermalas CRM · mācību prototips. Visi dati ir sintētiski.</p>
+    <p>Ezermalas CRM · mācību prototips. Visi dati ir sintētiski. <a href="/pieejamiba">Piekļūstamības paziņojums</a></p>
   </footer>
 </body>
 </html>

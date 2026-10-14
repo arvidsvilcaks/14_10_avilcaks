@@ -57,6 +57,7 @@ class PanelisAtbilde(BaseModel):
     sodien: date
     raditaji: Raditaji
     uzdevumi: list[Uzdevums]
+    atgadinajumi: list[Uzdevums]
     pieprasijumi: list[Pieprasijums]
     mijiedarbibas: list[PanelaMijiedarbiba]
     aktivitate: list[DarbiniekaAktivitate] | None
@@ -99,10 +100,11 @@ def panela_dati(lietotajs: Lietotajs) -> PanelisAtbilde:
         sodien=sodien,
         raditaji=raditaji,
         uzdevumi=uzdevumi.atlasit(lietotajs.id, lidz_sodienai=True),
+        atgadinajumi=uzdevumi.atlasit(lietotajs.id, atgadinajumi=True),
         pieprasijumi=pieprasijumi.atlasit(
             filtrs, termins_lidz=sodien + timedelta(days=TUVAKO_DIENU_SKAITS), neatbildeti=True
         ),
-        mijiedarbibas=[PanelaMijiedarbiba(**m.model_dump(exclude={"kopsavilkums"})) for m in pedejas],
+        mijiedarbibas=[PanelaMijiedarbiba(**m.model_dump(exclude={"kopsavilkums", "mi_kopsavilkums", "mi_nakamais_solis"})) for m in pedejas],
         aktivitate=aktivitate_pa_darbiniekiem() if lietotajs.ir_vaditajs else None,
     )
 

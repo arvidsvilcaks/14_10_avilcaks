@@ -47,13 +47,31 @@ tags:
       statuss nav `Atbildēts` (F9.7).
   - name: Uzdevumi
     description: |
-      Uzdevumi (F5 bez atgādinājumiem, CR-9). Darbinieks redz savus, vadītājs — visus.
+      Uzdevumi un atgādinājumi (F5). Darbinieks redz savus, vadītājs — visus.
+      Atgādinājums `atgadinat` nevar būt pēc termiņa.
       Atzīmēt kā izpildītu var tikai uzdevuma atbildīgais.
   - name: Vadības panelis
     description: |
       Kopsavilkuma ekrāns (F9, CR-10). HTML lapa `/panelis` izmanto tos pašus datus
       un līgumā netiek iekļauta. Saturu filtrē serverī pēc pieslēgtā lietotāja un
       lomas; URL parametri to neietekmē (F9.3).
+
+  - name: Kontaktpersonas
+    description: |
+      Kontaktpersonas pie organizācijas (F2). Skatīt var visi pieslēgtie lietotāji;
+      pievienot, labot un dzēst — organizācijas atbildīgais vai vadītājs.
+      Kontaktpersonu saraksta nolasīšana tiek ierakstīta piekļuves žurnālā (N2).
+  - name: Meklēšana
+    description: |
+      Meklēšana pa visiem ierakstiem (F6) bez reģistra un garumzīmēm. Organizācijas un
+      kontaktpersonas redz visi; mijiedarbības, pieprasījumus un uzdevumus darbinieks
+      redz tikai savus, vadītājs — visus.
+  - name: Pārskats
+    description: Pārskats vadītājam (F7) — darbinieku aktivitāte un slodze.
+  - name: Prioritātes
+    description: |
+      Organizāciju prioritizācija pēc sadarbības potenciāla (MI-2). Caurskatāms
+      punktu aprēķins ar pamatojumu; ieteikums, nevis automatizēts lēmums.
 
 paths:
   /health:
@@ -830,6 +848,226 @@ paths:
         '5XX':
           $ref: '#/components/responses/ServerError'
 
+  /organizacijas/{id}/kontakti:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Kontaktpersonas]
+      operationId: listContacts
+      summary: Organizācijas kontaktpersonas (F2)
+      security:
+        - sesija: []
+      responses:
+        '200':
+          description: Kontaktpersonas pēc vārda
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Kontaktpersona'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Kontaktpersonas]
+      operationId: createContact
+      summary: Pievienot kontaktpersonu (F2)
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KontaktpersonaIevade'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/KontaktpersonaIevade'
+      responses:
+        '201':
+          description: Kontaktpersona pievienota
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kontaktpersona'
+        '303':
+          description: (HTML forma) Novirza uz organizācijas kartīti
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /kontakti/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags: [Kontaktpersonas]
+      operationId: replaceContact
+      summary: Labot kontaktpersonu (F2)
+      description: Aizstāj visus laukus; nenorādītie neobligātie lauki tiek notīrīti.
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KontaktpersonaIevade'
+      responses:
+        '200':
+          description: Labotā kontaktpersona
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kontaktpersona'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Kontaktpersonas]
+      operationId: deleteContact
+      summary: Dzēst kontaktpersonu (F2, N2)
+      description: Neatgriezeniska dzēšana; dati uzreiz pazūd arī no meklēšanas.
+      security:
+        - sesija: []
+      responses:
+        '204':
+          description: Dzēsts
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /meklet:
+    get:
+      tags: [Meklēšana]
+      operationId: search
+      summary: Meklēt pa visiem ierakstiem (F6)
+      security:
+        - sesija: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Meklējamais teksts; īsāks par 2 rakstzīmēm atgriež tukšus sarakstus
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rezultāti pa ierakstu veidiem
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeklesanasRezultati'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /parskats:
+    get:
+      tags: [Pārskats]
+      operationId: getManagerOverview
+      summary: Pārskats vadītājam (F7)
+      description: Tikai vadītājam. Mijiedarbības — izvēlētajā periodā; pieprasījumi un uzdevumi — pašreizējais stāvoklis.
+      security:
+        - sesija: []
+      parameters:
+        - name: dienas
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 366
+            default: 30
+      responses:
+        '200':
+          description: Pārskats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parskats'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /prioritates:
+    get:
+      tags: [Prioritātes]
+      operationId: listPriorities
+      summary: Organizāciju prioritātes (MI-2)
+      description: Darbiniekam — organizācijas, kurām viņš ir atbildīgais; vadītājam — visas.
+      security:
+        - sesija: []
+      responses:
+        '200':
+          description: Organizācijas pēc punktiem dilstoši
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prioritate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
 components:
   securitySchemes:
     sesija:
@@ -1121,6 +1359,14 @@ components:
           example: Darbiniece Viena
         kopsavilkums:
           type: string
+        mi_kopsavilkums:
+          type: string
+          nullable: true
+          description: MI-1 kopsavilkums; tikai pēc darbinieka apstiprinājuma, marķēts „Ģenerēts ar MI”
+        mi_nakamais_solis:
+          type: string
+          nullable: true
+          description: MI-1 ieteiktais nākamais solis; tikai pēc darbinieka apstiprinājuma
 
     PieprasijumaStatuss:
       type: string
@@ -1204,6 +1450,11 @@ components:
         atbildigais_id:
           type: integer
           description: Tikai vadītājs var norādīt citu lietotāju
+        atgadinat:
+          type: string
+          format: date
+          nullable: true
+          description: Atgādinājuma datums (F5); ne vēlāk par termiņu
 
     Uzdevums:
       type: object
@@ -1228,10 +1479,17 @@ components:
         organizacijas_nosaukums:
           type: string
           nullable: true
+        atgadinat:
+          type: string
+          format: date
+          nullable: true
+        atgadinajums_aktivs:
+          type: boolean
+          description: Neizpildīts un atgādinājuma datums ir pienācis
 
     Panelis:
       type: object
-      required: [lietotajs, sodien, raditaji, uzdevumi, pieprasijumi, mijiedarbibas, aktivitate]
+      required: [lietotajs, sodien, raditaji, uzdevumi, atgadinajumi, pieprasijumi, mijiedarbibas, aktivitate]
       properties:
         lietotajs:
           $ref: '#/components/schemas/Lietotajs'
@@ -1253,6 +1511,11 @@ components:
               type: integer
         uzdevumi:
           type: array
+          items:
+            $ref: '#/components/schemas/Uzdevums'
+        atgadinajumi:
+          type: array
+          description: Paša lietotāja neizpildītie uzdevumi, kuru atgādinājuma datums ir pienācis (F5)
           items:
             $ref: '#/components/schemas/Uzdevums'
         pieprasijumi:
@@ -1307,6 +1570,152 @@ components:
           type: integer
         kaveti_pieprasijumi:
           type: integer
+
+    KontaktpersonaIevade:
+      type: object
+      required: [vards]
+      properties:
+        vards:
+          type: string
+          minLength: 1
+          maxLength: 100
+        amats:
+          type: string
+          nullable: true
+          maxLength: 100
+        epasts:
+          type: string
+          format: email
+          nullable: true
+        talrunis:
+          type: string
+          nullable: true
+          pattern: '^\+?[0-9 ()-]+$'
+          maxLength: 30
+
+    Kontaktpersona:
+      type: object
+      required: [id, organizacija_id, vards, amats, epasts, talrunis]
+      properties:
+        id:
+          type: integer
+        organizacija_id:
+          type: integer
+        vards:
+          type: string
+        amats:
+          type: string
+          nullable: true
+        epasts:
+          type: string
+          nullable: true
+        talrunis:
+          type: string
+          nullable: true
+
+    MeklesanasRezultati:
+      type: object
+      required: [q, organizacijas, kontaktpersonas, mijiedarbibas, pieprasijumi, uzdevumi]
+      properties:
+        q:
+          type: string
+        organizacijas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Organizacija'
+        kontaktpersonas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Kontaktpersona'
+        mijiedarbibas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mijiedarbiba'
+        pieprasijumi:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pieprasijums'
+        uzdevumi:
+          type: array
+          items:
+            $ref: '#/components/schemas/Uzdevums'
+
+    DarbiniekaRaditaji:
+      type: object
+      required: [darbinieks_id, vards, zvani, epasti, tiksanas, mijiedarbibas, atverti_pieprasijumi, kaveti_pieprasijumi, neizpilditi_uzdevumi, kaveti_uzdevumi]
+      properties:
+        darbinieks_id:
+          type: integer
+          description: Rindai „Kopā” — 0
+        vards:
+          type: string
+        zvani:
+          type: integer
+        epasti:
+          type: integer
+        tiksanas:
+          type: integer
+        mijiedarbibas:
+          type: integer
+        atverti_pieprasijumi:
+          type: integer
+        kaveti_pieprasijumi:
+          type: integer
+        neizpilditi_uzdevumi:
+          type: integer
+        kaveti_uzdevumi:
+          type: integer
+
+    Parskats:
+      type: object
+      required: ['no', lidz, dienas, darbinieki, kopa]
+      properties:
+        'no':
+          type: string
+          format: date
+        lidz:
+          type: string
+          format: date
+        dienas:
+          type: integer
+        darbinieki:
+          type: array
+          items:
+            $ref: '#/components/schemas/DarbiniekaRaditaji'
+        kopa:
+          $ref: '#/components/schemas/DarbiniekaRaditaji'
+
+    Prioritate:
+      type: object
+      required: [organizacija_id, nosaukums, atbildigais_vards, mijiedarbibas, tiksanas, atverti_pieprasijumi, atbildeti_pieprasijumi, pedeja_mijiedarbiba, punkti, pamatojums]
+      properties:
+        organizacija_id:
+          type: integer
+        nosaukums:
+          type: string
+        atbildigais_vards:
+          type: string
+        mijiedarbibas:
+          type: integer
+          description: Pēdējās 90 dienās
+        tiksanas:
+          type: integer
+          description: Pēdējās 90 dienās
+        atverti_pieprasijumi:
+          type: integer
+        atbildeti_pieprasijumi:
+          type: integer
+        pedeja_mijiedarbiba:
+          type: string
+          format: date
+          nullable: true
+        punkti:
+          type: integer
+        pamatojums:
+          type: array
+          description: Katra rādītāja ieguldījums punktos, cilvēkam saprotamā tekstā
+          items:
+            type: string
 
     Error:
       type: object

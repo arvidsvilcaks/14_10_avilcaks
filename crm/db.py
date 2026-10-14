@@ -32,7 +32,14 @@ def savienojums() -> Iterator[sqlite3.Connection]:
 # Kolonnas, kas pievienotas pēc tabulas izveides: (tabula, kolonna, definīcija).
 MIGRACIJAS = [
     ("lietotaji", "loma", "TEXT NOT NULL DEFAULT 'darbinieks' CHECK (loma IN ('darbinieks', 'vaditajs'))"),
+    ("uzdevumi", "atgadinat", "TEXT"),
+    ("mijiedarbibas", "mi_kopsavilkums", "TEXT"),
+    ("mijiedarbibas", "mi_nakamais_solis", "TEXT"),
+    ("mijiedarbibas", "mi_apstiprinaja_id", "INTEGER REFERENCES lietotaji(id)"),
 ]
+
+# N2: piekļuves žurnāla ierakstu glabāšanas termiņš.
+ZURNALA_GLABASANAS_DIENAS = 365
 
 
 def inicializet() -> None:
@@ -42,3 +49,6 @@ def inicializet() -> None:
             esosas = {rinda["name"] for rinda in conn.execute(f"PRAGMA table_info({tabula})")}
             if kolonna not in esosas:
                 conn.execute(f"ALTER TABLE {tabula} ADD COLUMN {kolonna} {definicija}")
+        conn.execute(
+            "DELETE FROM piekluves_zurnals WHERE laiks < datetime('now', ?)", (f"-{ZURNALA_GLABASANAS_DIENAS} days",)
+        )

@@ -15,7 +15,7 @@
       {% for u in uzdevumi %}
       <tr>
         <td>{{ u.termins | datums }}</td>
-        <td>{{ u.nosaukums }}</td>
+        <td>{{ u.nosaukums }}{% if u.atgadinajums_aktivs %} <span class="atzime">Atgādinājums</span>{% endif %}</td>
         <td>{% if u.organizacija_id %}<a href="/organizacijas/{{ u.organizacija_id }}">{{ u.organizacijas_nosaukums }}</a>{% else %}—{% endif %}</td>
         {% if ar_atbildigo %}<td>{{ u.atbildiga_vards }}</td>{% endif %}
         <td>

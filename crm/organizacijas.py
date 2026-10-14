@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, StringConstraints
 
+from crm import piekluve
 from crm.auth import Lietotajs, Pieslegts, lietotajs_pec_id, visi_lietotaji
 from crm.db import savienojums
 from crm.ievade import nolasit
@@ -144,6 +145,7 @@ async def izveidot(request: Request, lietotajs: Pieslegts) -> Response:
 def kartite(request: Request, organizacijas_id: int, lietotajs: Pieslegts) -> Response:
     organizacija = atrast_organizaciju(organizacijas_id)
     if gaida_html(request):
+        piekluve.ierakstit(lietotajs.id, organizacija.id)  # kartītē ir kontaktpersonu dati (N2)
         konteksts = {"organizacija": organizacija, "var_labot": var_labot(lietotajs, organizacija)}
         konteksts["kartites_bloki"] = []
         for papildinajums in KARTITES_PAPILDINAJUMI:

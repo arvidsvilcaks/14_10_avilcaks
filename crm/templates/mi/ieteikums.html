@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_formas.html" import lauks, kludu_kopsavilkums %}
+{% block virsraksts %}MI ieteikums{% endblock %}
+{% block saturs %}
+<div class="saurs">
+<h1>MI ieteikums mijiedarbībai</h1>
+<dl class="dati">
+  <dt>Organizācija</dt><dd><a href="/organizacijas/{{ m.organizacija_id }}">{{ m.organizacijas_nosaukums }}</a></dd>
+  <dt>Datums</dt><dd>{{ m.datums | datums }}</dd>
+  <dt>Veids</dt><dd>{{ veidi[m.veids] }}</dd>
+  <dt>Kopsavilkums</dt><dd>{{ m.kopsavilkums or "—" }}</dd>
+</dl>
+{% if kluda %}<div class="kludu-kopsavilkums" role="alert"><p>{{ kluda }}</p></div>{% endif %}
+{% if melnraksts %}
+<section aria-labelledby="melnraksts-virsraksts">
+  <h2 id="melnraksts-virsraksts">Melnraksts <span class="atzime">Ģenerēts ar MI</span></h2>
+  <p>Pārbaudiet un, ja vajag, izlabojiet tekstu. Ieteikums tiks saglabāts tikai pēc jūsu apstiprinājuma; MI nepieņem lēmumus jūsu vietā.</p>
+  {{ kludu_kopsavilkums(kludas) }}
+  <form method="post" action="/mijiedarbibas/{{ m.id }}/mi/apstiprinat" novalidate>
+    {{ lauks("kopsavilkums", "MI kopsavilkums", tips="textarea", vertiba=melnraksts.kopsavilkums, kludas=kludas, obligats=true) }}
+    {{ lauks("nakamais_solis", "Ieteiktais nākamais solis", tips="textarea", vertiba=melnraksts.nakamais_solis, kludas=kludas, obligats=true) }}
+    <button type="submit">Apstiprināt un saglabāt</button>
+    <a href="/organizacijas/{{ m.organizacija_id }}">Noraidīt</a>
+  </form>
+</section>
+{% else %}
+{% if m.mi_nakamais_solis %}
+<section aria-labelledby="saglabats-virsraksts">
+  <h2 id="saglabats-virsraksts">Apstiprinātais ieteikums <span class="atzime">Ģenerēts ar MI</span></h2>
+  <dl class="dati">
+    <dt>MI kopsavilkums</dt><dd>{{ m.mi_kopsavilkums }}</dd>
+    <dt>Nākamais solis</dt><dd>{{ m.mi_nakamais_solis }}</dd>
+  </dl>
+  <form method="post" action="/mijiedarbibas/{{ m.id }}/mi/dzest"><button type="submit" class="sekundara">Dzēst MI ieteikumu</button></form>
+</section>
+{% endif %}
+<form method="post" action="/mijiedarbibas/{{ m.id }}/mi/generet">
+  <p class="palidziba">MI pakalpojumam (Anthropic Claude) tiks nosūtīts tikai mijiedarbības veids un kopsavilkuma teksts — bez organizācijas nosaukuma un kontaktpersonu datiem. Neierakstiet kopsavilkumā personas datus.</p>
+  <button type="submit">{{ "Ģenerēt jaunu ieteikumu" if m.mi_nakamais_solis else "Ģenerēt ieteikumu" }}</button>
+</form>
+{% endif %}
+</div>
+{% endblock %}

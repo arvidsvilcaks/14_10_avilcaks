@@ -1,4 +1,4 @@
-{# Mijiedarbību tabula. Mainīgie: mijiedarbibas, veidi, paraksts, ar_darbinieku, ar_organizaciju, ar_kopsavilkumu #}
+{# Mijiedarbību tabula. Mainīgie: mijiedarbibas, veidi, paraksts, ar_darbinieku, ar_organizaciju, ar_kopsavilkumu, ar_mi #}
 <div class="tabulas-ietvars">
   <table>
     <caption>{{ paraksts }}</caption>
@@ -9,6 +9,7 @@
         {% if ar_organizaciju %}<th scope="col">Organizācija</th>{% endif %}
         {% if ar_darbinieku %}<th scope="col">Darbinieks</th>{% endif %}
         {% if ar_kopsavilkumu %}<th scope="col">Kopsavilkums</th>{% endif %}
+        {% if ar_mi %}<th scope="col">MI ieteikums</th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -19,6 +20,12 @@
         {% if ar_organizaciju %}<td><a href="/organizacijas/{{ m.organizacija_id }}">{{ m.organizacijas_nosaukums }}</a></td>{% endif %}
         {% if ar_darbinieku %}<td>{{ m.darbinieka_vards }}</td>{% endif %}
         {% if ar_kopsavilkumu %}<td>{{ m.kopsavilkums or "—" }}</td>{% endif %}
+        {% if ar_mi %}
+        <td>
+          {% if m.mi_nakamais_solis %}<span class="atzime">Ģenerēts ar MI</span> Nākamais solis: {{ m.mi_nakamais_solis }}{% endif %}
+          {% if lietotajs.ir_vaditajs or m.darbinieks_id == lietotajs.id %}<a href="/mijiedarbibas/{{ m.id }}/mi">{{ "Skatīt" if m.mi_nakamais_solis else "Sagatavot" }}<span class="slepts"> MI ieteikumu mijiedarbībai {{ m.datums | datums }}</span></a>{% elif not m.mi_nakamais_solis %}—{% endif %}
+        </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>

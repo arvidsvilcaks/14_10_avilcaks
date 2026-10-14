@@ -168,3 +168,5 @@ th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--
 .bloks { min-width: 0; }
 .bloks.plats { grid-column: 1 / -1; }
 .darbibas { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; }
+.kopa th, .kopa td { font-weight: 700; border-top: 2px solid var(--teksts); }
+.kompakts { margin: 0; padding-left: 1.1rem; }

@@ -46,6 +46,8 @@ class Mijiedarbiba(BaseModel):
     darbinieks_id: int
     darbinieka_vards: str
     kopsavilkums: str
+    mi_kopsavilkums: str | None = None  # MI-1, tikai pēc darbinieka apstiprinājuma
+    mi_nakamais_solis: str | None = None
 
 
 _VAICAJUMS = """
@@ -88,6 +90,12 @@ def atlasit(
         parametri.append(limits)
     with savienojums() as conn:
         return [_no_rindas(r) for r in conn.execute(vaicajums, parametri).fetchall()]
+
+
+def mijiedarbiba_pec_id(mijiedarbibas_id: int) -> Mijiedarbiba | None:
+    with savienojums() as conn:
+        rinda = conn.execute(_VAICAJUMS + " WHERE m.id = ?", (mijiedarbibas_id,)).fetchone()
+    return _no_rindas(rinda) if rinda else None
 
 
 def sonedel() -> tuple[date, date]:
@@ -154,6 +162,7 @@ def _kartites_bloks(organizacija: Organizacija, lietotajs: Lietotajs) -> dict:
         "bloks": "mijiedarbibas/kartites_bloks.html",
         "mijiedarbibas": atlasit(organizacija_id=organizacija.id),
         "veidi": VEIDU_NOSAUKUMI,
+        "ar_mi": True,
     }
 
 
