@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block virsraksts %}{{ organizacija.nosaukums }}{% endblock %}
+{% block saturs %}
+<h1>{{ organizacija.nosaukums }}</h1>
+<dl class="dati">
+  <dt>Reģistrācijas numurs</dt><dd>{{ organizacija.reg_nr or "—" }}</dd>
+  <dt>Atbildīgais darbinieks</dt><dd>{{ organizacija.atbildigais_vards }}</dd>
+</dl>
+{% if var_labot %}<p><a class="poga sekundara" href="/organizacijas/{{ organizacija.id }}/labot">Labot organizāciju</a></p>{% endif %}
+{% for bloks in kartites_bloki %}{% include bloks %}{% endfor %}
+{% endblock %}

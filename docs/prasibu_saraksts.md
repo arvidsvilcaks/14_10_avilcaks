@@ -7,7 +7,7 @@
 | Statuss | ID | Prasība |
 |:---:|---|---|
 | ✅ | F0 | Pieslēgšanās / reģistrēšanās sistēmā |
-| ⬜ | F1 | Organizācijas: izveidot, rediģēt, meklēt |
+| ✅ | F1 | Organizācijas: izveidot, rediģēt, meklēt |
 | ⬜ | F2 | Kontaktpersonas pie organizācijas |
 | ⬜ | F3 | Mijiedarbību žurnāls |
 | ⬜ | F4 | Pieprasījumi no organizācijām |

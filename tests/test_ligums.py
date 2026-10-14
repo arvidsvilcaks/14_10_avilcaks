@@ -8,6 +8,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 IESNIEGUMU_API = {"/health", "/submissions", "/submissions/{id}"}  # A1 uzdevums, nav CRM daļa
+HTTP_METODES = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
 
 
 def _ligums() -> dict:
@@ -33,6 +34,7 @@ def _crm_operacijas(ligums: dict) -> set[tuple[str, str]]:
         for cels, operacijas in ligums["paths"].items()
         if cels not in IESNIEGUMU_API
         for metode in operacijas
+        if metode in HTTP_METODES
     }
 
 

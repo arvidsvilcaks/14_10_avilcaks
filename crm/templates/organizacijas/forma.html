@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_formas.html" import lauks, izvele, kludu_kopsavilkums %}
+{% set virsraksts_teksts = "Labot organizāciju" if organizacija else "Jauna organizācija" %}
+{% block virsraksts %}{{ virsraksts_teksts }}{% endblock %}
+{% block saturs %}
+<div class="saurs">
+  <h1>{{ virsraksts_teksts }}</h1>
+  {{ kludu_kopsavilkums(kludas) }}
+  <form method="post" action="{{ '/organizacijas/%d/labot' % organizacija.id if organizacija else '/organizacijas' }}" novalidate>
+    {{ lauks("nosaukums", "Nosaukums", vertiba=ievade.nosaukums, kludas=kludas, obligats=true, autocomplete="organization") }}
+    {{ lauks("reg_nr", "Reģistrācijas numurs", vertiba=ievade.reg_nr, kludas=kludas) }}
+    {% if organizacija and lietotaji %}
+    {% set iespejas = [] %}
+    {% for l in lietotaji %}{% set _ = iespejas.append((l.id, l.vards)) %}{% endfor %}
+    {{ izvele("atbildigais_id", "Atbildīgais darbinieks", iespejas, vertiba=ievade.atbildigais_id, kludas=kludas) }}
+    {% endif %}
+    <button type="submit">Saglabāt</button>
+    <a href="{{ '/organizacijas/%d' % organizacija.id if organizacija else '/organizacijas' }}">Atcelt</a>
+  </form>
+</div>
+{% endblock %}

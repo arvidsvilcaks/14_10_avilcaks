@@ -122,3 +122,7 @@ th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--
 .atzime.kavets { background: var(--kluda); color: #fff; }
 
 .tukss { color: var(--vajs); font-style: italic; }
+
+.dati { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; }
+.dati dt { font-weight: 600; }
+.dati dd { margin: 0; }

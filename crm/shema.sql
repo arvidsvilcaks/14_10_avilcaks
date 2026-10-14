@@ -9,3 +9,13 @@ CREATE TABLE IF NOT EXISTS lietotaji (
     loma TEXT NOT NULL DEFAULT 'darbinieks' CHECK (loma IN ('darbinieks', 'vaditajs')),
     izveidots TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS organizacijas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nosaukums TEXT NOT NULL,
+    nosaukums_meklesanai TEXT NOT NULL,
+    reg_nr TEXT UNIQUE,
+    atbildigais_id INTEGER NOT NULL REFERENCES lietotaji(id),
+    izveidots TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS organizacijas_atbildigais ON organizacijas(atbildigais_id);

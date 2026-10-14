@@ -68,6 +68,12 @@ def lietotajs_pec_id(lietotaja_id: int) -> Lietotajs | None:
     return _no_rindas(rinda) if rinda else None
 
 
+def visi_lietotaji() -> list[Lietotajs]:
+    with savienojums() as conn:
+        rindas = conn.execute("SELECT * FROM lietotaji ORDER BY vards").fetchall()
+    return [_no_rindas(r) for r in rindas]
+
+
 def pieslegts_lietotajs(request: Request) -> Lietotajs:
     """Atkarība aizsargātiem maršrutiem. Lietotāju un lomu nolasa no datubāzes katrā pieprasījumā."""
     lietotaja_id = request.session.get("lietotajs_id")

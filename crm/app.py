@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from crm import auth, db, kludas, lomas, panelis
+from crm import auth, db, kludas, lomas, organizacijas, panelis
 from crm.sabloni import veidnes
 
 SESIJAS_ILGUMS = 8 * 60 * 60
@@ -43,6 +43,7 @@ def izveidot_lietotni() -> FastAPI:
     kludas.registret(app)
     app.include_router(auth.router)
     app.include_router(lomas.router)
+    app.include_router(organizacijas.router)
     app.include_router(panelis.router)
     veidnes.env.globals["macibu_rezims"] = lomas.macibu_rezims
     veidnes.env.globals["lomu_nosaukumi"] = auth.LOMU_NOSAUKUMI

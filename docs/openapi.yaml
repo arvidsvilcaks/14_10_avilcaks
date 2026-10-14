@@ -32,6 +32,10 @@ tags:
     description: |
       Lomas `darbinieks` un `vaditajs` (N3, CR-5). Lomu nolasa no datubāzes
       katrā pieprasījumā, tāpēc izmaiņa stājas spēkā nākamajā pieprasījumā.
+  - name: Organizācijas
+    description: |
+      Organizācijas (F1, CR-6). Skatīt var visi pieslēgtie lietotāji; rediģēt —
+      atbildīgais darbinieks vai vadītājs. `GET` ar `Accept: text/html` atgriež HTML lapu.
 
 paths:
   /health:
@@ -294,6 +298,144 @@ paths:
         '5XX':
           $ref: '#/components/responses/ServerError'
 
+  /organizacijas:
+    get:
+      tags: [Organizācijas]
+      operationId: listOrganizations
+      summary: Organizāciju saraksts un meklēšana (CR-6)
+      description: |
+        Meklē nosaukuma daļu neatkarīgi no lielajiem burtiem un garumzīmēm
+        („riga” atrod „Rīga”). Bez rezultātiem — tukšs saraksts.
+      security:
+        - sesija: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Nosaukuma daļa
+          schema:
+            type: string
+            example: riga
+      responses:
+        '200':
+          description: Organizācijas, sakārtotas pēc nosaukuma
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organizacija'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Organizācijas]
+      operationId: createOrganization
+      summary: Izveidot organizāciju (CR-6)
+      description: Atbildīgais darbinieks ir izveidotājs.
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizacijaIevade'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrganizacijaIevade'
+      responses:
+        '201':
+          description: Organizācija izveidota
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizacija'
+        '303':
+          description: (HTML forma) Novirza uz organizācijas kartīti
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /organizacijas/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Organizācijas]
+      operationId: getOrganization
+      summary: Organizācijas kartīte (CR-6)
+      security:
+        - sesija: []
+      responses:
+        '200':
+          description: Organizācija
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizacija'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    patch:
+      tags: [Organizācijas]
+      operationId: updateOrganization
+      summary: Labot organizāciju (CR-6)
+      description: |
+        Maina tikai norādītos laukus. Labot var atbildīgais darbinieks vai vadītājs;
+        `atbildigais_id` drīkst mainīt tikai vadītājs. `reg_nr: null` dzēš numuru.
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizacijasLabojums'
+      responses:
+        '200':
+          description: Organizācija pēc izmaiņām
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizacija'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
 components:
   securitySchemes:
     sesija:
@@ -484,6 +626,58 @@ components:
       properties:
         lietotajs:
           $ref: '#/components/schemas/Lietotajs'
+
+    Organizacija:
+      type: object
+      required: [id, nosaukums, reg_nr, atbildigais_id, atbildigais_vards]
+      properties:
+        id:
+          type: integer
+          example: 1
+        nosaukums:
+          type: string
+          example: SIA Ezermalas Koks
+        reg_nr:
+          type: string
+          nullable: true
+          example: '40003000001'
+        atbildigais_id:
+          type: integer
+          example: 2
+        atbildigais_vards:
+          type: string
+          example: Darbiniece Viena
+
+    OrganizacijaIevade:
+      type: object
+      required: [nosaukums]
+      properties:
+        nosaukums:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Atstarpes sākumā un beigās tiek noņemtas; tikai atstarpes — 422
+        reg_nr:
+          type: string
+          nullable: true
+          maxLength: 20
+          description: Reģistrācijas numurs; unikāls (dublikāts — 409)
+
+    OrganizacijasLabojums:
+      type: object
+      minProperties: 1
+      properties:
+        nosaukums:
+          type: string
+          minLength: 1
+          maxLength: 200
+        reg_nr:
+          type: string
+          nullable: true
+          maxLength: 20
+        atbildigais_id:
+          type: integer
+          description: Tikai vadītājs; neeksistējošs lietotājs — 422
 
     Error:
       type: object
