@@ -22,6 +22,12 @@ tags:
     description: Iesnieguma pieņemšana un apskate (R1–R3)
   - name: Sistēma
     description: Tehniskie galapunkti (R4)
+  - name: Autentifikācija
+    description: |
+      CRM reģistrēšanās, pieslēgšanās un atteikšanās (F0, CR-4).
+      Sesija ir parakstīta sīkdatne `crm_sesija` (8 h, `HttpOnly`, `SameSite=Lax`).
+      Katru `POST` var sūtīt kā JSON vai kā HTML formu
+      (`application/x-www-form-urlencoded`); formai atbilde ir HTML lapa vai 303 novirzīšana.
 
 paths:
   /health:
@@ -102,7 +108,111 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /auth/register:
+    post:
+      tags: [Autentifikācija]
+      operationId: registerUser
+      summary: Reģistrēt CRM lietotāju (CR-4)
+      description: |
+        Izveido kontu. E-pastu glabā mazajiem burtiem; e-pasts ir unikāls
+        neatkarīgi no lielajiem/mazajiem burtiem. Paroli glabā tikai kā
+        sāļotu PBKDF2-SHA256 jaucējvērtību, atbildē tā netiek atgriezta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Registracija'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Registracija'
+      responses:
+        '201':
+          description: Konts izveidots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lietotajs'
+        '303':
+          description: (HTML forma) Konts izveidots, novirza uz `/auth/login?registrets=1`
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /auth/login:
+    post:
+      tags: [Autentifikācija]
+      operationId: loginUser
+      summary: Pieslēgties (CR-4)
+      description: |
+        Pārbauda e-pastu un paroli un izveido sesiju. Nepareizai parolei un
+        nezināmam e-pastam atbilde ir vienāda.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pieslegsanas'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Pieslegsanas'
+      responses:
+        '200':
+          description: Pieslēgts; atbildē ir sesijas sīkdatne `crm_sesija`
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PieslegsanasAtbilde'
+        '303':
+          description: (HTML forma) Pieslēgts, novirza uz `/panelis` (F9.1)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /auth/logout:
+    post:
+      tags: [Autentifikācija]
+      operationId: logoutUser
+      summary: Atslēgties (CR-4)
+      description: Dzēš sesiju. Darbojas arī bez aktīvas sesijas.
+      responses:
+        '204':
+          description: Sesija dzēsta
+        '303':
+          description: (HTML forma) Sesija dzēsta, novirza uz `/auth/login`
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
 components:
+  securitySchemes:
+    sesija:
+      type: apiKey
+      in: cookie
+      name: crm_sesija
+      description: Sesijas sīkdatne pēc `POST /auth/login` (CR-4)
+
   schemas:
     Health:
       type: object
@@ -216,6 +326,61 @@ components:
       enum: [RECEIVED, IN_PROGRESS, FORWARDED, ANSWERED, WITHDRAWN]
       example: RECEIVED
 
+    Lietotajs:
+      type: object
+      description: CRM lietotājs (CR-4)
+      required: [id, vards, epasts]
+      properties:
+        id:
+          type: integer
+          example: 1
+        vards:
+          type: string
+          example: Anna Paraugs
+        epasts:
+          type: string
+          format: email
+          example: anna@example.com
+
+    Registracija:
+      type: object
+      required: [vards, epasts, parole]
+      properties:
+        vards:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Anna Paraugs
+        epasts:
+          type: string
+          format: email
+          maxLength: 254
+          example: anna@example.com
+        parole:
+          type: string
+          format: password
+          minLength: 12
+          maxLength: 256
+
+    Pieslegsanas:
+      type: object
+      required: [epasts, parole]
+      properties:
+        epasts:
+          type: string
+          format: email
+          example: anna@example.com
+        parole:
+          type: string
+          format: password
+
+    PieslegsanasAtbilde:
+      type: object
+      required: [lietotajs]
+      properties:
+        lietotajs:
+          $ref: '#/components/schemas/Lietotajs'
+
     Error:
       type: object
       description: Vienota kļūdu shēma visiem galapunktiem
@@ -248,6 +413,79 @@ components:
                     example: INVALID_FORMAT
 
   responses:
+    BadRequest:
+      description: Pieprasījuma ķermenis nav derīgs JSON objekts
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: BAD_REQUEST
+              message: Pieprasījuma ķermenis nav derīgs JSON
+    Unauthorized:
+      description: Nav pieslēgts vai nepareizi pieslēgšanās dati. HTML pieprasījumu novirza uz `/auth/login` (303).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Nepieciešama pieslēgšanās
+    Forbidden:
+      description: Lietotāja lomai vai piederībai šī darbība nav atļauta
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: FORBIDDEN
+              message: Darbība nav atļauta
+    ResursNavAtrasts:
+      description: Resurss nav atrasts
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NOT_FOUND
+              message: Nav atrasts
+    Conflict:
+      description: Konflikts ar esošiem datiem
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: CONFLICT
+              message: Lietotājs ar šo e-pastu jau ir reģistrēts
+    ValidationFailed:
+      description: Lauku vērtības nav derīgas. Dati netiek saglabāti.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Ievades dati nav derīgi
+              details:
+                - field: parole
+                  issue: TOO_SHORT
+    ServerError:
+      description: Servera kļūda
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: Servera kļūda
     ValidationError:
       description: Kļūdains pieprasījums. Iesniegums netiek saglabāts.
       content:

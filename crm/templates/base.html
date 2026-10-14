@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block virsraksts %}{% endblock %} · Ezermalas CRM</title>
+  <link rel="stylesheet" href="/static/stils.css">
+</head>
+<body>
+  <a class="izlaist" href="#saturs">Pāriet uz saturu</a>
+  <header class="galva">
+    <p class="logo"><a href="/">Ezermalas CRM</a></p>
+    {% if lietotajs %}
+    <nav aria-label="Galvenā navigācija">
+      <ul>
+        {% set sadalas = [("/panelis", "Panelis")] %}
+        {% for adrese, nosaukums in sadalas %}
+        <li><a href="{{ adrese }}"{% if request.url.path == adrese %} aria-current="page"{% endif %}>{{ nosaukums }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+    <div class="lietotajs">
+      <span>{{ lietotajs.vards }}</span>
+      <form method="post" action="/auth/logout"><button type="submit" class="sekundara">Atslēgties</button></form>
+    </div>
+    {% endif %}
+  </header>
+  <main id="saturs" tabindex="-1">
+    {% block saturs %}{% endblock %}
+  </main>
+  <footer class="kaje">
+    <p>Ezermalas CRM · mācību prototips. Visi dati ir sintētiski.</p>
+  </footer>
+</body>
+</html>

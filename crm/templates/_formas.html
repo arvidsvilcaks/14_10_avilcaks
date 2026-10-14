@@ -1,0 +1,51 @@
+{% macro kludu_kopsavilkums(kludas) %}
+{% if kludas %}
+<div class="kludu-kopsavilkums" role="alert">
+  <h2>Lūdzu, izlabojiet kļūdas</h2>
+  <ul>
+    {% for lauks, zina in kludas.items() %}
+    <li><a href="#l-{{ lauks }}">{{ zina }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro _apraksts(nosaukums, kluda, palidziba) -%}
+{%- set id = [] -%}
+{%- if palidziba %}{% set _ = id.append("p-" ~ nosaukums) %}{% endif -%}
+{%- if kluda %}{% set _ = id.append("k-" ~ nosaukums) %}{% endif -%}
+{%- if id %} aria-describedby="{{ id | join(' ') }}"{% endif -%}
+{%- if kluda %} aria-invalid="true"{% endif -%}
+{%- endmacro %}
+
+{% macro _galva(nosaukums, etikete, kluda, obligats, palidziba) %}
+<label for="l-{{ nosaukums }}">{{ etikete }}{% if obligats %} <span class="obligats">(obligāts)</span>{% endif %}</label>
+{% if palidziba %}<p class="palidziba" id="p-{{ nosaukums }}">{{ palidziba }}</p>{% endif %}
+{% if kluda %}<p class="lauka-kluda" id="k-{{ nosaukums }}">{{ kluda }}</p>{% endif %}
+{% endmacro %}
+
+{% macro lauks(nosaukums, etikete, tips="text", vertiba="", kludas={}, obligats=false, autocomplete=none, palidziba=none) %}
+{% set kluda = kludas.get(nosaukums) %}
+<div class="lauks{% if kluda %} ar-kludu{% endif %}">
+  {{ _galva(nosaukums, etikete, kluda, obligats, palidziba) }}
+  {% if tips == "textarea" %}
+  <textarea id="l-{{ nosaukums }}" name="{{ nosaukums }}" rows="5"{% if obligats %} required{% endif %}{{ _apraksts(nosaukums, kluda, palidziba) }}>{{ vertiba if vertiba is not none else "" }}</textarea>
+  {% else %}
+  <input id="l-{{ nosaukums }}" name="{{ nosaukums }}" type="{{ tips }}" value="{{ vertiba if vertiba is not none else '' }}"{% if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}{% if obligats %} required{% endif %}{{ _apraksts(nosaukums, kluda, palidziba) }}>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro izvele(nosaukums, etikete, iespejas, vertiba="", kludas={}, obligats=false, tuksa=none, palidziba=none) %}
+{% set kluda = kludas.get(nosaukums) %}
+<div class="lauks{% if kluda %} ar-kludu{% endif %}">
+  {{ _galva(nosaukums, etikete, kluda, obligats, palidziba) }}
+  <select id="l-{{ nosaukums }}" name="{{ nosaukums }}"{% if obligats %} required{% endif %}{{ _apraksts(nosaukums, kluda, palidziba) }}>
+    {% if tuksa is not none %}<option value="">{{ tuksa }}</option>{% endif %}
+    {% for v, teksts in iespejas %}
+    <option value="{{ v }}"{% if v | string == vertiba | string %} selected{% endif %}>{{ teksts }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endmacro %}

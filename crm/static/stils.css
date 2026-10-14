@@ -1,0 +1,124 @@
+/* Ezermalas CRM. Krāsu kontrasts pret fonu ≥ 4,5:1 (N1). */
+:root {
+  --fons: #ffffff;
+  --virsma: #f4f6f8;
+  --teksts: #1b1f24;
+  --vajs: #4a5260;
+  --saite: #0b4fa8;
+  --fokuss: #1d4ed8;
+  --robeza: #8a94a3;
+  --kluda: #a4161a;
+  --kluda-fons: #fdecec;
+  --ok-fons: #e6f4ea;
+  --ok: #1e5e2f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--teksts);
+  background: var(--fons);
+}
+
+a { color: var(--saite); }
+
+:focus-visible {
+  outline: 3px solid var(--fokuss);
+  outline-offset: 2px;
+}
+
+.izlaist {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  padding: .5rem 1rem;
+  background: var(--teksts);
+  color: var(--fons);
+}
+.izlaist:focus { left: 1rem; z-index: 10; }
+
+.galva {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem 1.5rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--robeza);
+  background: var(--virsma);
+}
+.logo { margin: 0; font-weight: 700; }
+.logo a { color: var(--teksts); text-decoration: none; }
+.galva nav ul { display: flex; flex-wrap: wrap; gap: .25rem 1rem; list-style: none; margin: 0; padding: 0; }
+.galva nav a[aria-current="page"] { font-weight: 700; }
+.lietotajs { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-left: auto; }
+.lietotajs form { margin: 0; }
+
+main { padding: 1rem; max-width: 80rem; margin: 0 auto; }
+main:focus { outline: none; }
+.saurs { max-width: 32rem; }
+
+.kaje { padding: 1rem; color: var(--vajs); border-top: 1px solid var(--robeza); }
+
+h1 { font-size: 1.75rem; margin: .5rem 0 1rem; }
+h2 { font-size: 1.25rem; margin: 0 0 .75rem; }
+
+button, .poga {
+  display: inline-block;
+  font: inherit;
+  padding: .5rem 1rem;
+  border: 2px solid var(--saite);
+  border-radius: 4px;
+  background: var(--saite);
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+}
+button.sekundara, .poga.sekundara { background: var(--fons); color: var(--saite); }
+
+.lauks { margin-bottom: 1rem; }
+.lauks label { display: block; font-weight: 600; }
+.lauks input, .lauks select, .lauks textarea {
+  width: 100%;
+  max-width: 32rem;
+  font: inherit;
+  padding: .5rem;
+  border: 1px solid var(--robeza);
+  border-radius: 4px;
+}
+.ar-kludu input, .ar-kludu select, .ar-kludu textarea { border: 2px solid var(--kluda); }
+.obligats, .palidziba { font-weight: 400; color: var(--vajs); }
+.palidziba { margin: 0; }
+.lauka-kluda { margin: 0; color: var(--kluda); font-weight: 600; }
+
+.kludu-kopsavilkums, .kluda-zina {
+  border: 2px solid var(--kluda);
+  background: var(--kluda-fons);
+  padding: .75rem 1rem;
+  margin-bottom: 1rem;
+}
+.zina {
+  border: 2px solid var(--ok);
+  background: var(--ok-fons);
+  padding: .75rem 1rem;
+}
+.zina:empty { display: none; }
+
+table { border-collapse: collapse; width: 100%; }
+caption { text-align: left; font-weight: 600; padding-bottom: .25rem; }
+th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--robeza); vertical-align: top; }
+.tabulas-ietvars { overflow-x: auto; }
+
+.atzime {
+  display: inline-block;
+  padding: 0 .4rem;
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: .875rem;
+}
+.atzime.kavets { background: var(--kluda); color: #fff; }
+
+.tukss { color: var(--vajs); font-style: italic; }

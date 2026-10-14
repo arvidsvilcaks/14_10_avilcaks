@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block virsraksts %}Kļūda {{ status }}{% endblock %}
+{% block saturs %}
+{% set nosaukumi = {403: "Piekļuve liegta", 404: "Lapa nav atrasta"} %}
+<h1>{{ nosaukumi.get(status, "Kļūda") }}</h1>
+<p>{{ zinojums }}</p>
+<p><a href="/">Atgriezties sākumlapā</a></p>
+{% endblock %}
