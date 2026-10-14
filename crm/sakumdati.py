@@ -121,8 +121,37 @@ def pieprasijumi(conn: sqlite3.Connection) -> None:
         )
 
 
+# (lietotāja e-pasts, dienas līdz termiņam, izpildīts, nosaukums)
+UZDEVUMI = [
+    ("darbinieks1@example.com", -2, False, "Piezvanīt par līguma pagarinājumu"),
+    ("darbinieks1@example.com", 0, False, "Sagatavot tikšanās darba kārtību"),
+    ("darbinieks1@example.com", 0, True, "Nosūtīt piedāvājumu"),
+    ("darbinieks1@example.com", 2, False, "Atjaunot organizācijas datus"),
+    ("darbinieks2@example.com", -1, False, "Atbildēt uz e-pastu par pasākumu"),
+    ("darbinieks2@example.com", 0, False, "Pārbaudīt rēķina rekvizītus"),
+    ("darbinieks2@example.com", 5, False, "Plānot vizīti pie partnera"),
+    ("vaditajs@example.com", 0, False, "Pārskatīt nedēļas kavējumus"),
+]
+
+
+def uzdevumi(conn: sqlite3.Connection) -> None:
+    if not _tuksa(conn, "uzdevumi"):
+        return
+    sodien = laiks.sodien()
+    for epasts, dienas, izpildits, nosaukums in UZDEVUMI:
+        lietotaja_id = _lietotaja_id(conn, epasts)
+        organizacija = conn.execute(
+            "SELECT id FROM organizacijas WHERE atbildigais_id = ? ORDER BY id LIMIT 1", (lietotaja_id,)
+        ).fetchone()
+        conn.execute(
+            "INSERT INTO uzdevumi (nosaukums, termins, izpildits, atbildigais_id, organizacija_id) VALUES (?, ?, ?, ?, ?)",
+            (nosaukums, (sodien + timedelta(days=dienas)).isoformat(), int(izpildits), lietotaja_id,
+             organizacija["id"] if organizacija else None),
+        )
+
+
 # Datu sadaļas pēc lietotājiem, atkarību secībā.
-SADALAS: list = [organizacijas, mijiedarbibas, pieprasijumi]
+SADALAS: list = [organizacijas, mijiedarbibas, pieprasijumi, uzdevumi]
 
 
 def ieladet(parole: str) -> None:

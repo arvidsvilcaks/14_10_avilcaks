@@ -45,6 +45,10 @@ tags:
       Pieprasījumi no organizācijām (F4, CR-8). Darbinieks redz un maina savus,
       vadītājs — visus. **Kavēts:** termiņš pirms šodienas (Europe/Riga) un
       statuss nav `Atbildēts` (F9.7).
+  - name: Uzdevumi
+    description: |
+      Uzdevumi (F5 bez atgādinājumiem, CR-9). Darbinieks redz savus, vadītājs — visus.
+      Atzīmēt kā izpildītu var tikai uzdevuma atbildīgais.
 
 paths:
   /health:
@@ -671,6 +675,128 @@ paths:
         '5XX':
           $ref: '#/components/responses/ServerError'
 
+  /uzdevumi:
+    get:
+      tags: [Uzdevumi]
+      operationId: listTasks
+      summary: Uzdevumu saraksts (CR-9)
+      security:
+        - sesija: []
+      parameters:
+        - name: lidz_sodienai
+          in: query
+          required: false
+          description: "`true` — tikai neizpildītie ar termiņu šodien vai agrāk (Europe/Riga)"
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Uzdevumi; neizpildītie pirmie, tad pēc termiņa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Uzdevums'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Uzdevumi]
+      operationId: createTask
+      summary: Izveidot uzdevumu (CR-9)
+      description: |
+        Atbildīgais pēc noklusējuma ir izveidotājs. Darbinieks var izveidot uzdevumu
+        tikai sev (citādi 403); vadītājs var piešķirt jebkuram lietotājam.
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UzdevumsIevade'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UzdevumsIevade'
+      responses:
+        '201':
+          description: Uzdevums izveidots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Uzdevums'
+        '303':
+          description: (HTML forma) Novirza uz `/uzdevumi`
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /uzdevumi/{id}/izpildits:
+    post:
+      tags: [Uzdevumi]
+      operationId: completeTask
+      summary: Atzīmēt uzdevumu kā izpildītu (CR-9, F9.6)
+      description: |
+        Tikai uzdevuma atbildīgais (arī vadītājam svešs uzdevums — 403).
+        Atkārtota atzīmēšana neko nemaina. HTML formai — POST–redirect–GET:
+        303 uz lauka `atpakal` lietotnes iekšējo ceļu (noklusējums `/uzdevumi`)
+        ar `pazinojums=uzdevums-izpildits`.
+      security:
+        - sesija: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                atpakal:
+                  type: string
+                  example: /panelis
+      responses:
+        '200':
+          description: Uzdevums izpildīts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Uzdevums'
+        '303':
+          description: (HTML forma) Novirza atpakaļ
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
 components:
   securitySchemes:
     sesija:
@@ -1026,6 +1152,49 @@ components:
         kavets:
           type: boolean
           description: Termiņš pirms šodienas un statuss nav `Atbildēts`
+
+    UzdevumsIevade:
+      type: object
+      required: [nosaukums, termins]
+      properties:
+        nosaukums:
+          type: string
+          minLength: 1
+          maxLength: 200
+        termins:
+          type: string
+          format: date
+          example: '2026-10-14'
+        organizacija_id:
+          type: integer
+          nullable: true
+        atbildigais_id:
+          type: integer
+          description: Tikai vadītājs var norādīt citu lietotāju
+
+    Uzdevums:
+      type: object
+      required: [id, nosaukums, termins, izpildits, atbildigais_id, atbildiga_vards, organizacija_id, organizacijas_nosaukums]
+      properties:
+        id:
+          type: integer
+        nosaukums:
+          type: string
+        termins:
+          type: string
+          format: date
+        izpildits:
+          type: boolean
+        atbildigais_id:
+          type: integer
+        atbildiga_vards:
+          type: string
+        organizacija_id:
+          type: integer
+          nullable: true
+        organizacijas_nosaukums:
+          type: string
+          nullable: true
 
     Error:
       type: object

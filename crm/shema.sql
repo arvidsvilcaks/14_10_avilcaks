@@ -42,3 +42,14 @@ CREATE TABLE IF NOT EXISTS pieprasijumi (
     izveidots TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS pieprasijumi_atbildigais ON pieprasijumi(atbildigais_id, termins);
+
+CREATE TABLE IF NOT EXISTS uzdevumi (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nosaukums TEXT NOT NULL,
+    termins TEXT NOT NULL,
+    izpildits INTEGER NOT NULL DEFAULT 0 CHECK (izpildits IN (0, 1)),
+    atbildigais_id INTEGER NOT NULL REFERENCES lietotaji(id),
+    organizacija_id INTEGER REFERENCES organizacijas(id),
+    izveidots TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS uzdevumi_atbildigais ON uzdevumi(atbildigais_id, izpildits, termins);
