@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block virsraksts %}Mijiedarbības{% endblock %}
+{% block saturs %}
+<h1>{% if periods == "sonedel" %}Mijiedarbības šonedēļ{% else %}Mijiedarbības{% endif %}</h1>
+<p>
+  <a class="poga" href="/mijiedarbibas/jauna">Jauna mijiedarbība</a>
+  {% if periods == "sonedel" %}<a href="/mijiedarbibas">Rādīt visas</a>{% else %}<a href="/mijiedarbibas?periods=sonedel">Tikai šonedēļ</a>{% endif %}
+</p>
+{% if mijiedarbibas %}
+{% set paraksts = ("Visu darbinieku" if lietotajs.ir_vaditajs else "Manas") ~ " mijiedarbības: " ~ (mijiedarbibas | length) %}
+{% set ar_darbinieku = lietotajs.ir_vaditajs %}{% set ar_organizaciju = true %}{% set ar_kopsavilkumu = true %}
+{% include "mijiedarbibas/tabula.html" %}
+{% else %}
+<p class="tukss">{% if periods == "sonedel" %}Šonedēļ mijiedarbību nav.{% else %}Mijiedarbību vēl nav.{% endif %}</p>
+{% endif %}
+{% endblock %}

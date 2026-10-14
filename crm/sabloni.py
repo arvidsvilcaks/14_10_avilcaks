@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.responses import Response
 
 from crm.db import SAKNE
+from crm.laiks import garais_datums
 
 veidnes = Jinja2Templates(directory=SAKNE / "templates")
 
@@ -27,3 +28,4 @@ def _datums(vertiba: date | str | None) -> str:
 
 
 veidnes.env.filters["datums"] = _datums
+veidnes.env.filters["garais_datums"] = garais_datums

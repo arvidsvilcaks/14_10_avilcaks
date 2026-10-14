@@ -8,8 +8,9 @@ mainīgā `CRM_SAKUMDATU_PAROLE`; repozitorijā paroles nav.
 import os
 import sqlite3
 import sys
+from datetime import timedelta
 
-from crm import db, paroles
+from crm import db, laiks, paroles
 from crm.auth import PAROLES_MIN_GARUMS
 
 LIETOTAJI = [
@@ -64,8 +65,38 @@ def organizacijas(conn: sqlite3.Connection) -> None:
         )
 
 
+MIJIEDARBIBU_VEIDI = ["zvans", "e-pasts", "tikšanās"]
+MIJIEDARBIBU_TEMAS = [
+    "Pārrunāta sadarbība nākamajam ceturksnim.",
+    "Nosūtīts piedāvājums; gaida atbildi.",
+    "Tikšanās par kopīgu pasākumu ezermalā.",
+    "Precizēti rēķina rekvizīti.",
+    "Organizācija interesējas par pašvaldības atbalstu.",
+]
+
+
+def mijiedarbibas(conn: sqlite3.Connection) -> None:
+    """30 mijiedarbības pēdējo 20 dienu laikā; autors ir organizācijas atbildīgais."""
+    if not _tuksa(conn, "mijiedarbibas"):
+        return
+    organizacijas = conn.execute("SELECT id, atbildigais_id FROM organizacijas ORDER BY id").fetchall()
+    sodien = laiks.sodien()
+    for i in range(30):
+        org = organizacijas[i % len(organizacijas)]
+        conn.execute(
+            "INSERT INTO mijiedarbibas (datums, veids, organizacija_id, darbinieks_id, kopsavilkums) VALUES (?, ?, ?, ?, ?)",
+            (
+                (sodien - timedelta(days=(i * 2) % 21)).isoformat(),
+                MIJIEDARBIBU_VEIDI[i % 3],
+                org["id"],
+                org["atbildigais_id"],
+                MIJIEDARBIBU_TEMAS[i % len(MIJIEDARBIBU_TEMAS)],
+            ),
+        )
+
+
 # Datu sadaļas pēc lietotājiem, atkarību secībā.
-SADALAS: list = [organizacijas]
+SADALAS: list = [organizacijas, mijiedarbibas]
 
 
 def ieladet(parole: str) -> None:

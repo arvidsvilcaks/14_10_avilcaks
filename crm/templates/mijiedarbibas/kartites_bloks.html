@@ -1,0 +1,11 @@
+<section aria-labelledby="mijiedarbibas-virsraksts">
+  <h2 id="mijiedarbibas-virsraksts">Mijiedarbības</h2>
+  <p><a href="/mijiedarbibas/jauna?organizacija_id={{ organizacija.id }}">Pievienot mijiedarbību</a></p>
+  {% if mijiedarbibas %}
+  {% set paraksts = "Mijiedarbības ar " ~ organizacija.nosaukums ~ ", jaunākās vispirms" %}
+  {% set ar_darbinieku = true %}{% set ar_organizaciju = false %}{% set ar_kopsavilkumu = true %}
+  {% include "mijiedarbibas/tabula.html" %}
+  {% else %}
+  <p class="tukss">Mijiedarbību vēl nav.</p>
+  {% endif %}
+</section>

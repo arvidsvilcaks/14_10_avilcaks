@@ -1,0 +1,26 @@
+{# Mijiedarbību tabula. Mainīgie: mijiedarbibas, veidi, paraksts, ar_darbinieku, ar_organizaciju, ar_kopsavilkumu #}
+<div class="tabulas-ietvars">
+  <table>
+    <caption>{{ paraksts }}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Datums</th>
+        <th scope="col">Veids</th>
+        {% if ar_organizaciju %}<th scope="col">Organizācija</th>{% endif %}
+        {% if ar_darbinieku %}<th scope="col">Darbinieks</th>{% endif %}
+        {% if ar_kopsavilkumu %}<th scope="col">Kopsavilkums</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in mijiedarbibas %}
+      <tr>
+        <td>{{ m.datums | datums }}</td>
+        <td>{{ veidi[m.veids] }}</td>
+        {% if ar_organizaciju %}<td><a href="/organizacijas/{{ m.organizacija_id }}">{{ m.organizacijas_nosaukums }}</a></td>{% endif %}
+        {% if ar_darbinieku %}<td>{{ m.darbinieka_vards }}</td>{% endif %}
+        {% if ar_kopsavilkumu %}<td>{{ m.kopsavilkums or "—" }}</td>{% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

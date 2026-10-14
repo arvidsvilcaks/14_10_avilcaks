@@ -36,6 +36,10 @@ tags:
     description: |
       Organizācijas (F1, CR-6). Skatīt var visi pieslēgtie lietotāji; rediģēt —
       atbildīgais darbinieks vai vadītājs. `GET` ar `Accept: text/html` atgriež HTML lapu.
+  - name: Mijiedarbības
+    description: |
+      Mijiedarbību žurnāls (F3, CR-7). Darbinieks redz savas mijiedarbības,
+      vadītājs — visas. Datums nedrīkst būt nākotnē (Europe/Riga).
 
 paths:
   /health:
@@ -436,6 +440,112 @@ paths:
         '5XX':
           $ref: '#/components/responses/ServerError'
 
+  /mijiedarbibas:
+    get:
+      tags: [Mijiedarbības]
+      operationId: listInteractions
+      summary: Mijiedarbību saraksts (CR-7)
+      description: Darbiniekam — tikai savas, vadītājam — visas; jaunākās vispirms.
+      security:
+        - sesija: []
+      parameters:
+        - name: periods
+          in: query
+          required: false
+          description: "`sonedel` — tikai šīs nedēļas (pirmdiena–svētdiena, Europe/Riga) ieraksti"
+          schema:
+            type: string
+            enum: [sonedel]
+      responses:
+        '200':
+          description: Mijiedarbības
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mijiedarbiba'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Mijiedarbības]
+      operationId: createInteraction
+      summary: Pievienot mijiedarbību (CR-7)
+      description: |
+        Darbinieks vienmēr ir pieslēgtais lietotājs; pieprasījumā norādīts
+        `darbinieks_id` tiek ignorēts. Neeksistējoša organizācija — 422 (`NOT_FOUND`),
+        datums nākotnē — 422 (`FUTURE_DATE`).
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MijiedarbibaIevade'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MijiedarbibaIevade'
+      responses:
+        '201':
+          description: Mijiedarbība pievienota
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mijiedarbiba'
+        '303':
+          description: (HTML forma) Novirza uz organizācijas kartīti
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /organizacijas/{id}/mijiedarbibas:
+    get:
+      tags: [Mijiedarbības]
+      operationId: listOrganizationInteractions
+      summary: Organizācijas mijiedarbības (CR-7)
+      description: Visu darbinieku mijiedarbības ar organizāciju, jaunākās vispirms.
+      security:
+        - sesija: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Mijiedarbības
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mijiedarbiba'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
 components:
   securitySchemes:
     sesija:
@@ -678,6 +788,55 @@ components:
         atbildigais_id:
           type: integer
           description: Tikai vadītājs; neeksistējošs lietotājs — 422
+
+    MijiedarbibasVeids:
+      type: string
+      enum: [zvans, e-pasts, tikšanās]
+      example: zvans
+
+    MijiedarbibaIevade:
+      type: object
+      required: [datums, veids, organizacija_id]
+      properties:
+        datums:
+          type: string
+          format: date
+          description: Ne vēlāk kā šodien (Europe/Riga)
+          example: '2026-10-14'
+        veids:
+          $ref: '#/components/schemas/MijiedarbibasVeids'
+        organizacija_id:
+          type: integer
+          example: 1
+        kopsavilkums:
+          type: string
+          maxLength: 2000
+          default: ''
+
+    Mijiedarbiba:
+      type: object
+      required: [id, datums, veids, organizacija_id, organizacijas_nosaukums, darbinieks_id, darbinieka_vards, kopsavilkums]
+      properties:
+        id:
+          type: integer
+        datums:
+          type: string
+          format: date
+          example: '2026-10-14'
+        veids:
+          $ref: '#/components/schemas/MijiedarbibasVeids'
+        organizacija_id:
+          type: integer
+        organizacijas_nosaukums:
+          type: string
+          example: SIA Ezermalas Koks
+        darbinieks_id:
+          type: integer
+        darbinieka_vards:
+          type: string
+          example: Darbiniece Viena
+        kopsavilkums:
+          type: string
 
     Error:
       type: object
