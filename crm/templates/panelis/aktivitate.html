@@ -1,0 +1,30 @@
+<section class="bloks plats" aria-labelledby="aktivitate-virsraksts">
+  <h2 id="aktivitate-virsraksts">Aktivitāte pa darbiniekiem</h2>
+  {% if dati.aktivitate %}
+  <div class="tabulas-ietvars">
+    <table>
+      <caption>Mijiedarbības pēdējās 7 dienās un pieprasījumi katram darbiniekam</caption>
+      <thead>
+        <tr>
+          <th scope="col">Darbinieks</th>
+          <th scope="col">Mijiedarbības (7 dienas)</th>
+          <th scope="col">Atvērtie pieprasījumi</th>
+          <th scope="col">Kavētie pieprasījumi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in dati.aktivitate %}
+        <tr>
+          <th scope="row">{{ a.vards }}</th>
+          <td>{{ a.mijiedarbibas }}</td>
+          <td>{{ a.atverti_pieprasijumi }}</td>
+          <td>{{ a.kaveti_pieprasijumi }}{% if a.kaveti_pieprasijumi %} <span class="atzime kavets">Kavēts</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="tukss">Darbinieku vēl nav.</p>
+  {% endif %}
+</section>

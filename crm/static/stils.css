@@ -140,3 +140,31 @@ th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--
 .rindas-forma { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; margin: 0; }
 .rindas-forma select { font: inherit; padding: .25rem; }
 .rindas-forma button { padding: .25rem .5rem; }
+
+/* Vadības panelis (F9): 200 % mērogā bloki kārtojas vienā kolonnā. */
+.panela-galvene p { margin-top: 0; color: var(--vajs); }
+.raditaji ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: .75rem;
+  list-style: none;
+  padding: 0;
+}
+.raditaji a {
+  display: block;
+  padding: 1rem;
+  border: 1px solid var(--robeza);
+  border-radius: 6px;
+  background: var(--virsma);
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+.panelis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+.bloks { min-width: 0; }
+.bloks.plats { grid-column: 1 / -1; }
+.darbibas { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; }

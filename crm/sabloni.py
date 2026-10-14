@@ -27,5 +27,12 @@ def _datums(vertiba: date | str | None) -> str:
     return vertiba.strftime("%d.%m.%Y")
 
 
+def _skaits(n: int, vienskaitlis: str, daudzskaitlis: str) -> str:
+    """Latviešu skaitļa forma: 1, 21, 31 … — vienskaitlis; 11 un pārējie — daudzskaitlis."""
+    forma = vienskaitlis if n % 10 == 1 and n % 100 != 11 else daudzskaitlis
+    return f"{n} {forma}"
+
+
 veidnes.env.filters["datums"] = _datums
+veidnes.env.filters["skaits"] = _skaits
 veidnes.env.filters["garais_datums"] = garais_datums

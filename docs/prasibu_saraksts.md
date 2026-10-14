@@ -15,7 +15,7 @@
 | ⬜ | F6 | Meklēšana |
 | ⬜ | F7 | Pārskats vadītājam |
 | ⬜ | F8 | Piekļūstamības paziņojums |
-| ⬜ | F9 | Kopsavilkuma ekrāns (vadības panelis) |
+| ✅ | F9 | Kopsavilkuma ekrāns (vadības panelis) |
 | ⬜ | MI-1 | Mijiedarbības kopsavilkums un nākamā soļa ieteikums |
 | ⬜ | MI-2 | Organizāciju prioritizācija «pēc sadarbības potenciāla» |
 | ⬜ | N1 | Pieejamība |

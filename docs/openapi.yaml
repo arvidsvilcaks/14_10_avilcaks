@@ -49,6 +49,11 @@ tags:
     description: |
       Uzdevumi (F5 bez atgādinājumiem, CR-9). Darbinieks redz savus, vadītājs — visus.
       Atzīmēt kā izpildītu var tikai uzdevuma atbildīgais.
+  - name: Vadības panelis
+    description: |
+      Kopsavilkuma ekrāns (F9, CR-10). HTML lapa `/panelis` izmanto tos pašus datus
+      un līgumā netiek iekļauta. Saturu filtrē serverī pēc pieslēgtā lietotāja un
+      lomas; URL parametri to neietekmē (F9.3).
 
 paths:
   /health:
@@ -797,6 +802,34 @@ paths:
         '5XX':
           $ref: '#/components/responses/ServerError'
 
+  /api/panelis:
+    get:
+      tags: [Vadības panelis]
+      operationId: getDashboard
+      summary: Vadības paneļa dati (CR-10)
+      description: |
+        Darbiniekam — tikai savi dati; vadītājam — visu darbinieku dati un
+        `aktivitate`. `uzdevumi` vienmēr ir paša lietotāja neizpildītie uzdevumi ar
+        termiņu šodien vai agrāk. `pieprasijumi` — kavētie un tie, kuru termiņš ir
+        3 dienās (bez `Atbildēts`). `mijiedarbibas` — 5 jaunākās, bez kopsavilkuma (N2).
+      security:
+        - sesija: []
+      responses:
+        '200':
+          description: Paneļa dati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Panelis'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
 components:
   securitySchemes:
     sesija:
@@ -1195,6 +1228,85 @@ components:
         organizacijas_nosaukums:
           type: string
           nullable: true
+
+    Panelis:
+      type: object
+      required: [lietotajs, sodien, raditaji, uzdevumi, pieprasijumi, mijiedarbibas, aktivitate]
+      properties:
+        lietotajs:
+          $ref: '#/components/schemas/Lietotajs'
+        sodien:
+          type: string
+          format: date
+          description: Šodiena laika joslā Europe/Riga
+        raditaji:
+          type: object
+          required: [uzdevumi_sodien, kaveti_pieprasijumi, pieprasijumi_darba, mijiedarbibas_sonedel]
+          properties:
+            uzdevumi_sodien:
+              type: integer
+            kaveti_pieprasijumi:
+              type: integer
+            pieprasijumi_darba:
+              type: integer
+            mijiedarbibas_sonedel:
+              type: integer
+        uzdevumi:
+          type: array
+          items:
+            $ref: '#/components/schemas/Uzdevums'
+        pieprasijumi:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pieprasijums'
+        mijiedarbibas:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/PanelaMijiedarbiba'
+        aktivitate:
+          type: array
+          nullable: true
+          description: Tikai vadītājam; darbiniekam `null`
+          items:
+            $ref: '#/components/schemas/DarbiniekaAktivitate'
+
+    PanelaMijiedarbiba:
+      type: object
+      description: Mijiedarbība bez kopsavilkuma teksta (N2)
+      required: [id, datums, veids, organizacija_id, organizacijas_nosaukums, darbinieks_id, darbinieka_vards]
+      properties:
+        id:
+          type: integer
+        datums:
+          type: string
+          format: date
+        veids:
+          $ref: '#/components/schemas/MijiedarbibasVeids'
+        organizacija_id:
+          type: integer
+        organizacijas_nosaukums:
+          type: string
+        darbinieks_id:
+          type: integer
+        darbinieka_vards:
+          type: string
+
+    DarbiniekaAktivitate:
+      type: object
+      required: [darbinieks_id, vards, mijiedarbibas, atverti_pieprasijumi, kaveti_pieprasijumi]
+      properties:
+        darbinieks_id:
+          type: integer
+        vards:
+          type: string
+        mijiedarbibas:
+          type: integer
+          description: Mijiedarbības pēdējās 7 dienās (ieskaitot šodienu)
+        atverti_pieprasijumi:
+          type: integer
+        kaveti_pieprasijumi:
+          type: integer
 
     Error:
       type: object
