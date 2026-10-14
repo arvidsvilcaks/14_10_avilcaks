@@ -1,0 +1,11 @@
+<section class="bloks" aria-labelledby="mijiedarbibas-virsraksts">
+  <h2 id="mijiedarbibas-virsraksts">Pēdējās mijiedarbības</h2>
+  {% if dati.mijiedarbibas %}
+  {% set mijiedarbibas = dati.mijiedarbibas %}
+  {% set paraksts = ("Visu darbinieku" if dati.lietotajs.ir_vaditajs else "Manas") ~ " 5 jaunākās mijiedarbības" %}
+  {% set ar_darbinieku = dati.lietotajs.ir_vaditajs %}{% set ar_organizaciju = true %}{% set ar_kopsavilkumu = false %}
+  {% include "mijiedarbibas/tabula.html" %}
+  {% else %}
+  <p class="tukss">Mijiedarbību vēl nav.</p>
+  {% endif %}
+</section>

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block virsraksts %}{{ virsraksts }}{% endblock %}
+{% block saturs %}
+<h1>{{ virsraksts }}</h1>
+<p>
+  <a class="poga" href="/pieprasijumi/jauns">Jauns pieprasījums</a>
+</p>
+<nav aria-label="Pieprasījumu filtri">
+  <ul class="filtri">
+    <li><a href="/pieprasijumi"{% if not filtrets %} aria-current="page"{% endif %}>Visi</a></li>
+    <li><a href="/pieprasijumi?kavets=true"{% if request.query_params.get("kavets") == "true" %} aria-current="page"{% endif %}>Kavētie</a></li>
+    {% for s in statusi %}
+    <li><a href="/pieprasijumi?statuss={{ s | urlencode }}"{% if request.query_params.get("statuss") == s %} aria-current="page"{% endif %}>{{ s }}</a></li>
+    {% endfor %}
+  </ul>
+</nav>
+{% if pieprasijumi %}
+{% set paraksts = virsraksts ~ (" — visi darbinieki" if lietotajs.ir_vaditajs else " — mani") ~ ": " ~ (pieprasijumi | length) ~ ", sakārtoti pēc termiņa" %}
+{% set ar_atbildigo = lietotajs.ir_vaditajs %}{% set ar_organizaciju = true %}{% set ar_statusa_mainu = true %}
+{% include "pieprasijumi/tabula.html" %}
+{% else %}
+<p class="tukss">Atbilstošu pieprasījumu nav.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_formas.html" import lauks, izvele, kludu_kopsavilkums %}
+{% block virsraksts %}Jauna mijiedarbība{% endblock %}
+{% block saturs %}
+<div class="saurs">
+  <h1>Jauna mijiedarbība</h1>
+  {{ kludu_kopsavilkums(kludas) }}
+  <form method="post" action="/mijiedarbibas" novalidate>
+    {% set org_iespejas = [] %}{% for o in organizacijas %}{% set _ = org_iespejas.append((o.id, o.nosaukums)) %}{% endfor %}
+    {{ izvele("organizacija_id", "Organizācija", org_iespejas, vertiba=ievade.organizacija_id, kludas=kludas, obligats=true, tuksa="— izvēlieties —") }}
+    {{ izvele("veids", "Veids", veidi.items() | list, vertiba=ievade.veids, kludas=kludas, obligats=true, tuksa="— izvēlieties —") }}
+    {{ lauks("datums", "Datums", tips="date", vertiba=ievade.datums, kludas=kludas, obligats=true, palidziba="Ne vēlāk kā šodien.") }}
+    {{ lauks("kopsavilkums", "Kopsavilkums", tips="textarea", vertiba=ievade.kopsavilkums, kludas=kludas, palidziba="Līdz 2000 rakstzīmēm.") }}
+    <button type="submit">Saglabāt</button>
+    <a href="/mijiedarbibas">Atcelt</a>
+  </form>
+</div>
+{% endblock %}

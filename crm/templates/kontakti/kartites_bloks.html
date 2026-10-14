@@ -1,0 +1,41 @@
+<section aria-labelledby="kontakti-virsraksts">
+  <h2 id="kontakti-virsraksts">Kontaktpersonas</h2>
+  <div class="zina" role="status">{% if request.query_params.get("pazinojums") == "kontakts-dzests" %}Kontaktpersona dzēsta.{% endif %}</div>
+  {% if var_labot_kontaktus %}<p><a href="/organizacijas/{{ organizacija.id }}/kontakti/jauns">Pievienot kontaktpersonu</a></p>{% endif %}
+  {% if kontakti %}
+  <div class="tabulas-ietvars">
+    <table>
+      <caption>Kontaktpersonas organizācijā {{ organizacija.nosaukums }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Vārds</th>
+          <th scope="col">Amats</th>
+          <th scope="col">E-pasts</th>
+          <th scope="col">Tālrunis</th>
+          {% if var_labot_kontaktus %}<th scope="col">Darbības</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for k in kontakti %}
+        <tr>
+          <th scope="row">{{ k.vards }}</th>
+          <td>{{ k.amats or "—" }}</td>
+          <td>{% if k.epasts %}<a href="mailto:{{ k.epasts }}">{{ k.epasts }}</a>{% else %}—{% endif %}</td>
+          <td>{% if k.talrunis %}<a href="tel:{{ k.talrunis | replace(' ', '') }}">{{ k.talrunis }}</a>{% else %}—{% endif %}</td>
+          {% if var_labot_kontaktus %}
+          <td>
+            <a href="/kontakti/{{ k.id }}/labot">Labot<span class="slepts">: {{ k.vards }}</span></a>
+            <form method="post" action="/kontakti/{{ k.id }}/dzest" class="rindas-forma">
+              <button type="submit" class="sekundara">Dzēst<span class="slepts">: {{ k.vards }}</span></button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="tukss">Kontaktpersonu vēl nav.</p>
+  {% endif %}
+</section>

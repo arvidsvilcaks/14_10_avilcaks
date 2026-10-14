@@ -1,0 +1,11 @@
+<section class="bloks" aria-labelledby="pieprasijumi-virsraksts">
+  <h2 id="pieprasijumi-virsraksts">Kavētie un tuvākie pieprasījumi</h2>
+  {% if dati.pieprasijumi %}
+  {% set pieprasijumi = dati.pieprasijumi %}
+  {% set paraksts = "Kavētie un tie, kuru termiņš ir 3 dienās, sakārtoti pēc termiņa" %}
+  {% set ar_atbildigo = dati.lietotajs.ir_vaditajs %}{% set ar_organizaciju = true %}{% set ar_statusa_mainu = false %}
+  {% include "pieprasijumi/tabula.html" %}
+  {% else %}
+  <p class="tukss">Kavētu vai tuvāko pieprasījumu nav.</p>
+  {% endif %}
+</section>

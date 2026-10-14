@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_formas.html" import lauks, kludu_kopsavilkums %}
+{% block virsraksts %}Reģistrēties{% endblock %}
+{% block saturs %}
+<div class="saurs">
+  <h1>Reģistrēties</h1>
+  {{ kludu_kopsavilkums(kludas) }}
+  <form method="post" action="/auth/register" novalidate>
+    {{ lauks("vards", "Vārds un uzvārds", vertiba=ievade.vards, kludas=kludas, obligats=true, autocomplete="name") }}
+    {{ lauks("epasts", "E-pasts", tips="email", vertiba=ievade.epasts, kludas=kludas, obligats=true, autocomplete="email") }}
+    {{ lauks("parole", "Parole", tips="password", kludas=kludas, obligats=true, autocomplete="new-password", palidziba="Vismaz 12 rakstzīmes.") }}
+    <button type="submit">Izveidot kontu</button>
+  </form>
+  <p>Jau ir konts? <a href="/auth/login">Pieslēgties</a></p>
+</div>
+{% endblock %}

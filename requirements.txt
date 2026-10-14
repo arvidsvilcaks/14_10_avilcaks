@@ -1,0 +1,4 @@
+# Papildus devcontainer attēlā esošajām pakotnēm (fastapi, pydantic, httpx, pytest, uvicorn).
+jinja2==3.1.6
+itsdangerous==2.2.0
+python-multipart==0.0.20

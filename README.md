@@ -45,3 +45,24 @@ Sākotnējā līguma versija šo pārbaudi neiztur apzināti. Uzdevums ir pabeig
 | `make verify-setup` | Pārbauda Python, kursa pakotnes, Claude Code, saglabāto atbildi un smoke testus |
 | `make test` | Palaiž visus `pytest` testus |
 | `make lint-contract` | Validē OpenAPI dokumentu un kursa līguma noteikumus |
+
+## Ezermalas CRM (F0–F9)
+
+CRM prototips ir pakotnē `crm/` (FastAPI + Jinja2 + SQLite). Prasības: `docs/prasibu_saraksts.md` (apraksti `docs/<ID>.md`), pieteikumi: `tracker/CR-4.md` … `tracker/CR-10.md`.
+
+```bash
+make install   # papildu pakotnes no requirements.txt
+make run       # http://localhost:8000
+```
+
+Vides mainīgie:
+
+| Mainīgais | Nozīme |
+|---|---|
+| `CRM_DB_PATH` | SQLite fails (noklusējums `data/crm.db`, netiek iekļauts repozitorijā) |
+| `CRM_SESSION_SECRET` | Sesijas parakstīšanas atslēga; bez tās sesijas beidzas pēc servera restarta |
+| `CRM_HTTPS` | `1` — sesijas sīkdatne tikai pa HTTPS |
+| `CRM_MACIBU_REZIMS` | `1` — lietotājs var pārslēgt savu lomu (mācībām, F9.12) |
+| `CRM_SAKUMDATU_PAROLE` | Parole sākumdatu lietotājiem: `CRM_SAKUMDATU_PAROLE=... make seed` |
+| `ANTHROPIC_API_KEY` | MI-1 ieteikumiem (vajag arī `pip install anthropic`); bez tā MI ieteikums nav pieejams, pārējais strādā |
+| `CRM_MI_MODELIS` | MI-1 modelis (noklusējums `claude-opus-5-5`) |

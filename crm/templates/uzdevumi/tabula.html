@@ -1,0 +1,34 @@
+{# Uzdevumu tabula. Mainīgie: uzdevumi, paraksts, ar_atbildigo, atpakal (kur atgriezties pēc atzīmēšanas) #}
+<div class="tabulas-ietvars">
+  <table>
+    <caption>{{ paraksts }}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Termiņš</th>
+        <th scope="col">Uzdevums</th>
+        <th scope="col">Organizācija</th>
+        {% if ar_atbildigo %}<th scope="col">Atbildīgais</th>{% endif %}
+        <th scope="col">Stāvoklis</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in uzdevumi %}
+      <tr>
+        <td>{{ u.termins | datums }}</td>
+        <td>{{ u.nosaukums }}{% if u.atgadinajums_aktivs %} <span class="atzime">Atgādinājums</span>{% endif %}</td>
+        <td>{% if u.organizacija_id %}<a href="/organizacijas/{{ u.organizacija_id }}">{{ u.organizacijas_nosaukums }}</a>{% else %}—{% endif %}</td>
+        {% if ar_atbildigo %}<td>{{ u.atbildiga_vards }}</td>{% endif %}
+        <td>
+          {% if u.izpildits %}Izpildīts
+          {% elif u.atbildigais_id == lietotajs.id %}
+          <form method="post" action="/uzdevumi/{{ u.id }}/izpildits" class="rindas-forma">
+            <input type="hidden" name="atpakal" value="{{ atpakal }}">
+            <button type="submit" class="sekundara">Atzīmēt kā izpildītu<span class="slepts">: {{ u.nosaukums }}</span></button>
+          </form>
+          {% else %}Neizpildīts{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

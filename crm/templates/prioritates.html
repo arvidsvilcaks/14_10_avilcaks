@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block virsraksts %}Organizāciju prioritātes{% endblock %}
+{% block saturs %}
+<h1>Organizāciju prioritātes</h1>
+<p>{% if lietotajs.ir_vaditajs %}Visas organizācijas{% else %}Organizācijas, kurām esat atbildīgais{% endif %}, sakārtotas pēc sadarbības potenciāla punktiem.
+<strong>Tas ir automātisks aprēķins pēc noteikumiem — ieteikums darba secībai, nevis lēmums.</strong> Punktu aprēķinā neizmanto kontaktpersonu datus.</p>
+<details>
+  <summary>Kā aprēķina punktus</summary>
+  <ul>
+    {% for raditajs, (svars, apraksts) in svari.items() %}<li>{{ svars }} punkti {{ apraksts }}</li>{% endfor %}
+    {% for d, punkti in svaigums %}<li>{{ punkti }} punkti, ja pēdējā mijiedarbība bija ne senāk kā pirms {{ d }} dienām</li>{% endfor %}
+  </ul>
+</details>
+{% if prioritates %}
+<div class="tabulas-ietvars">
+  <table>
+    <caption>Organizācijas pēc punktiem (dilstoši) ar aprēķina pamatojumu</caption>
+    <thead>
+      <tr>
+        <th scope="col">Organizācija</th>
+        <th scope="col">Punkti</th>
+        <th scope="col">Pamatojums</th>
+        {% if lietotajs.ir_vaditajs %}<th scope="col">Atbildīgais</th>{% endif %}
+        <th scope="col">Pēdējā mijiedarbība</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in prioritates %}
+      <tr>
+        <th scope="row"><a href="/organizacijas/{{ p.organizacija_id }}">{{ p.nosaukums }}</a></th>
+        <td>{{ p.punkti }}</td>
+        <td>{% if p.pamatojums %}<ul class="kompakts">{% for t in p.pamatojums %}<li>{{ t }}</li>{% endfor %}</ul>{% else %}Nav aktivitātes{% endif %}</td>
+        {% if lietotajs.ir_vaditajs %}<td>{{ p.atbildigais_vards }}</td>{% endif %}
+        <td>{{ p.pedeja_mijiedarbiba | datums or "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="tukss">Organizāciju nav.</p>
+{% endif %}
+{% endblock %}

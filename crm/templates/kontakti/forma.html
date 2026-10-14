@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_formas.html" import lauks, kludu_kopsavilkums %}
+{% set virsraksts_teksts = "Labot kontaktpersonu" if kontakts else "Jauna kontaktpersona" %}
+{% block virsraksts %}{{ virsraksts_teksts }}{% endblock %}
+{% block saturs %}
+<div class="saurs">
+  <h1>{{ virsraksts_teksts }}</h1>
+  <p>Organizācija: <a href="/organizacijas/{{ organizacija.id }}">{{ organizacija.nosaukums }}</a></p>
+  {{ kludu_kopsavilkums(kludas) }}
+  <form method="post" action="{{ '/kontakti/%d/labot' % kontakts.id if kontakts else '/organizacijas/%d/kontakti' % organizacija.id }}" novalidate>
+    {{ lauks("vards", "Vārds, uzvārds", vertiba=ievade.vards, kludas=kludas, obligats=true, autocomplete="off") }}
+    {{ lauks("amats", "Amats", vertiba=ievade.amats, kludas=kludas, autocomplete="off") }}
+    {{ lauks("epasts", "E-pasts", tips="email", vertiba=ievade.epasts, kludas=kludas, autocomplete="off") }}
+    {{ lauks("talrunis", "Tālrunis", tips="tel", vertiba=ievade.talrunis, kludas=kludas, autocomplete="off", palidziba="Piemēram, +371 20000000") }}
+    <p class="palidziba">Ievadiet tikai darba kontaktinformāciju, kas vajadzīga sadarbībai (N2).</p>
+    <button type="submit">Saglabāt</button>
+    <a href="/organizacijas/{{ organizacija.id }}">Atcelt</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block virsraksts %}Piekļuves žurnāls{% endblock %}
+{% block saturs %}
+<h1>Piekļuves žurnāls</h1>
+<p>Kurš un kad atvēra organizācijas kartīti ar kontaktpersonu datiem (N2). Ieraksti tiek glabāti 12 mēnešus.</p>
+{% if ieraksti %}
+<div class="tabulas-ietvars">
+  <table>
+    <caption>Pēdējie {{ ieraksti | length }} ieraksti (ne vairāk kā {{ limits }}), jaunākie vispirms</caption>
+    <thead>
+      <tr><th scope="col">Laiks (UTC)</th><th scope="col">Lietotājs</th><th scope="col">Organizācija</th></tr>
+    </thead>
+    <tbody>
+      {% for z in ieraksti %}
+      <tr>
+        <td>{{ z.laiks }}</td>
+        <td>{{ z.lietotaja_vards }}</td>
+        <td><a href="/organizacijas/{{ z.organizacija_id }}">{{ z.organizacijas_nosaukums }}</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="tukss">Ierakstu vēl nav.</p>
+{% endif %}
+{% endblock %}

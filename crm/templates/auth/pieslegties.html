@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_formas.html" import lauks, kludu_kopsavilkums %}
+{% block virsraksts %}Pieslēgties{% endblock %}
+{% block saturs %}
+<div class="saurs">
+  <h1>Pieslēgties</h1>
+  {% if registrets %}<p class="zina" role="status">Konts izveidots. Tagad varat pieslēgties.</p>{% endif %}
+  {% if kluda %}<p class="kluda-zina" role="alert">{{ kluda }}</p>{% endif %}
+  {{ kludu_kopsavilkums(kludas) }}
+  <form method="post" action="/auth/login" novalidate>
+    {{ lauks("epasts", "E-pasts", tips="email", vertiba=ievade.epasts, kludas=kludas, obligats=true, autocomplete="username") }}
+    {{ lauks("parole", "Parole", tips="password", kludas=kludas, obligats=true, autocomplete="current-password") }}
+    <button type="submit">Pieslēgties</button>
+  </form>
+  <p>Nav konta? <a href="/auth/register">Reģistrēties</a></p>
+</div>
+{% endblock %}

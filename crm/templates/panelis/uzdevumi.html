@@ -1,0 +1,10 @@
+<section class="bloks" aria-labelledby="uzdevumi-virsraksts">
+  <h2 id="uzdevumi-virsraksts">Mani uzdevumi šodien</h2>
+  {% if dati.uzdevumi %}
+  {% set uzdevumi = dati.uzdevumi %}{% set paraksts = "Neizpildītie uzdevumi ar termiņu šodien vai agrāk" %}
+  {% set ar_atbildigo = false %}{% set atpakal = "/panelis" %}
+  {% include "uzdevumi/tabula.html" %}
+  {% else %}
+  <p class="tukss">Šodien uzdevumu nav.</p>
+  {% endif %}
+</section>

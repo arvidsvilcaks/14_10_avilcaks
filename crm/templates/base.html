@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block virsraksts %}{% endblock %} · Ezermalas CRM</title>
+  <link rel="stylesheet" href="/static/stils.css">
+</head>
+<body>
+  <a class="izlaist" href="#saturs">Pāriet uz saturu</a>
+  <header class="galva">
+    <p class="logo"><a href="/">Ezermalas CRM</a></p>
+    {% if lietotajs %}
+    <nav aria-label="Galvenā navigācija">
+      <ul>
+        {% set sadalas = [("/panelis", "Panelis"), ("/organizacijas", "Organizācijas"), ("/mijiedarbibas", "Mijiedarbības"), ("/pieprasijumi", "Pieprasījumi"), ("/uzdevumi", "Uzdevumi"), ("/meklet", "Meklēt")] %}
+        {% set sadalas = sadalas + [("/prioritates", "Prioritātes")] %}
+        {% if lietotajs.ir_vaditajs %}{% set sadalas = sadalas + [("/parskats", "Pārskats"), ("/piekluves-zurnals", "Piekļuves žurnāls")] %}{% endif %}
+        {% for adrese, nosaukums in sadalas %}
+        <li><a href="{{ adrese }}"{% if request.url.path == adrese or request.url.path.startswith(adrese ~ "/") %} aria-current="page"{% endif %}>{{ nosaukums }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+    <div class="lietotajs">
+      <span>{{ lietotajs.vards }} · {{ lomu_nosaukumi[lietotajs.loma] }}</span>
+      {% if macibu_rezims() %}
+      <form method="post" action="/macibu-rezims/loma" class="lomas-maina">
+        <input type="hidden" name="loma" value="{{ 'darbinieks' if lietotajs.loma == 'vaditajs' else 'vaditajs' }}">
+        <button type="submit" class="sekundara">Mācību režīms: skatīt kā {{ 'darbiniekam' if lietotajs.loma == 'vaditajs' else 'vadītājam' }}</button>
+      </form>
+      {% endif %}
+      <form method="post" action="/auth/logout"><button type="submit" class="sekundara">Atslēgties</button></form>
+    </div>
+    {% endif %}
+  </header>
+  <main id="saturs" tabindex="-1">
+    {% block saturs %}{% endblock %}
+  </main>
+  <footer class="kaje">
+    <p>Ezermalas CRM · mācību prototips. Visi dati ir sintētiski. <a href="/pieejamiba">Piekļūstamības paziņojums</a></p>
+  </footer>
+</body>
+</html>

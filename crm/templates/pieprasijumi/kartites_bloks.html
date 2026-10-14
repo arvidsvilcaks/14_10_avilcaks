@@ -1,0 +1,11 @@
+<section aria-labelledby="pieprasijumi-virsraksts">
+  <h2 id="pieprasijumi-virsraksts">Pieprasījumi</h2>
+  <p><a href="/pieprasijumi/jauns?organizacija_id={{ organizacija.id }}">Pievienot pieprasījumu</a></p>
+  {% if pieprasijumi %}
+  {% set paraksts = "Pieprasījumi no " ~ organizacija.nosaukums ~ ", sakārtoti pēc termiņa" %}
+  {% set ar_atbildigo = true %}{% set ar_organizaciju = false %}{% set ar_statusa_mainu = false %}
+  {% include "pieprasijumi/tabula.html" %}
+  {% else %}
+  <p class="tukss">Pieprasījumu nav.</p>
+  {% endif %}
+</section>

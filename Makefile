@@ -1,4 +1,4 @@
-.PHONY: verify-setup test lint-contract
+.PHONY: verify-setup test lint-contract install run seed
 
 verify-setup:
 	@python --version
@@ -12,3 +12,12 @@ test:
 
 lint-contract:
 	python tools/lint_contract.py docs/openapi.yaml
+
+install:
+	pip install -r requirements.txt
+
+run:
+	uvicorn crm.app:app --reload
+
+seed:
+	python -m crm.sakumdati

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_formas.html" import lauks, izvele, kludu_kopsavilkums %}
+{% block virsraksts %}Jauns uzdevums{% endblock %}
+{% block saturs %}
+<div class="saurs">
+  <h1>Jauns uzdevums</h1>
+  {{ kludu_kopsavilkums(kludas) }}
+  <form method="post" action="/uzdevumi" novalidate>
+    {{ lauks("nosaukums", "Uzdevums", vertiba=ievade.nosaukums, kludas=kludas, obligats=true) }}
+    {{ lauks("termins", "Termiņš", tips="date", vertiba=ievade.termins, kludas=kludas, obligats=true) }}
+    {{ lauks("atgadinat", "Atgādināt no", tips="date", vertiba=ievade.atgadinat, kludas=kludas, palidziba="Neobligāts. No šī datuma uzdevums parādās panelī „Atgādinājumi”; ne vēlāk par termiņu.") }}
+    {% set org_iespejas = [] %}{% for o in organizacijas %}{% set _ = org_iespejas.append((o.id, o.nosaukums)) %}{% endfor %}
+    {{ izvele("organizacija_id", "Organizācija", org_iespejas, vertiba=ievade.organizacija_id, kludas=kludas, tuksa="— nav —") }}
+    {% if lietotaji %}
+    {% set iespejas = [] %}{% for l in lietotaji %}{% set _ = iespejas.append((l.id, l.vards)) %}{% endfor %}
+    {{ izvele("atbildigais_id", "Atbildīgais darbinieks", iespejas, vertiba=ievade.atbildigais_id, kludas=kludas) }}
+    {% endif %}
+    <button type="submit">Saglabāt</button>
+    <a href="/uzdevumi">Atcelt</a>
+  </form>
+</div>
+{% endblock %}

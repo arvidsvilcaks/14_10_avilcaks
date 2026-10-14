@@ -22,6 +22,56 @@ tags:
     description: Iesnieguma pieņemšana un apskate (R1–R3)
   - name: Sistēma
     description: Tehniskie galapunkti (R4)
+  - name: Autentifikācija
+    description: |
+      CRM reģistrēšanās, pieslēgšanās un atteikšanās (F0, CR-4).
+      Sesija ir parakstīta sīkdatne `crm_sesija` (8 h, `HttpOnly`, `SameSite=Lax`).
+      Katru `POST` var sūtīt kā JSON vai kā HTML formu
+      (`application/x-www-form-urlencoded`); formai atbilde ir HTML lapa vai 303 novirzīšana.
+  - name: Lomas
+    description: |
+      Lomas `darbinieks` un `vaditajs` (N3, CR-5). Lomu nolasa no datubāzes
+      katrā pieprasījumā, tāpēc izmaiņa stājas spēkā nākamajā pieprasījumā.
+  - name: Organizācijas
+    description: |
+      Organizācijas (F1, CR-6). Skatīt var visi pieslēgtie lietotāji; rediģēt —
+      atbildīgais darbinieks vai vadītājs. `GET` ar `Accept: text/html` atgriež HTML lapu.
+  - name: Mijiedarbības
+    description: |
+      Mijiedarbību žurnāls (F3, CR-7). Darbinieks redz savas mijiedarbības,
+      vadītājs — visas. Datums nedrīkst būt nākotnē (Europe/Riga).
+  - name: Pieprasījumi
+    description: |
+      Pieprasījumi no organizācijām (F4, CR-8). Darbinieks redz un maina savus,
+      vadītājs — visus. **Kavēts:** termiņš pirms šodienas (Europe/Riga) un
+      statuss nav `Atbildēts` (F9.7).
+  - name: Uzdevumi
+    description: |
+      Uzdevumi un atgādinājumi (F5). Darbinieks redz savus, vadītājs — visus.
+      Atgādinājums `atgadinat` nevar būt pēc termiņa.
+      Atzīmēt kā izpildītu var tikai uzdevuma atbildīgais.
+  - name: Vadības panelis
+    description: |
+      Kopsavilkuma ekrāns (F9, CR-10). HTML lapa `/panelis` izmanto tos pašus datus
+      un līgumā netiek iekļauta. Saturu filtrē serverī pēc pieslēgtā lietotāja un
+      lomas; URL parametri to neietekmē (F9.3).
+
+  - name: Kontaktpersonas
+    description: |
+      Kontaktpersonas pie organizācijas (F2). Skatīt var visi pieslēgtie lietotāji;
+      pievienot, labot un dzēst — organizācijas atbildīgais vai vadītājs.
+      Kontaktpersonu saraksta nolasīšana tiek ierakstīta piekļuves žurnālā (N2).
+  - name: Meklēšana
+    description: |
+      Meklēšana pa visiem ierakstiem (F6) bez reģistra un garumzīmēm. Organizācijas un
+      kontaktpersonas redz visi; mijiedarbības, pieprasījumus un uzdevumus darbinieks
+      redz tikai savus, vadītājs — visus.
+  - name: Pārskats
+    description: Pārskats vadītājam (F7) — darbinieku aktivitāte un slodze.
+  - name: Prioritātes
+    description: |
+      Organizāciju prioritizācija pēc sadarbības potenciāla (MI-2). Caurskatāms
+      punktu aprēķins ar pamatojumu; ieteikums, nevis automatizēts lēmums.
 
 paths:
   /health:
@@ -102,7 +152,930 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /auth/register:
+    post:
+      tags: [Autentifikācija]
+      operationId: registerUser
+      summary: Reģistrēt CRM lietotāju (CR-4)
+      description: |
+        Izveido kontu. E-pastu glabā mazajiem burtiem; e-pasts ir unikāls
+        neatkarīgi no lielajiem/mazajiem burtiem. Paroli glabā tikai kā
+        sāļotu PBKDF2-SHA256 jaucējvērtību, atbildē tā netiek atgriezta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Registracija'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Registracija'
+      responses:
+        '201':
+          description: Konts izveidots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lietotajs'
+        '303':
+          description: (HTML forma) Konts izveidots, novirza uz `/auth/login?registrets=1`
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /auth/login:
+    post:
+      tags: [Autentifikācija]
+      operationId: loginUser
+      summary: Pieslēgties (CR-4)
+      description: |
+        Pārbauda e-pastu un paroli un izveido sesiju. Nepareizai parolei un
+        nezināmam e-pastam atbilde ir vienāda.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pieslegsanas'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Pieslegsanas'
+      responses:
+        '200':
+          description: Pieslēgts; atbildē ir sesijas sīkdatne `crm_sesija`
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PieslegsanasAtbilde'
+        '303':
+          description: (HTML forma) Pieslēgts, novirza uz `/panelis` (F9.1)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /auth/logout:
+    post:
+      tags: [Autentifikācija]
+      operationId: logoutUser
+      summary: Atslēgties (CR-4)
+      description: Dzēš sesiju. Darbojas arī bez aktīvas sesijas.
+      responses:
+        '204':
+          description: Sesija dzēsta
+        '303':
+          description: (HTML forma) Sesija dzēsta, novirza uz `/auth/login`
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /lietotaji/{id}/loma:
+    patch:
+      tags: [Lomas]
+      operationId: changeUserRole
+      summary: Mainīt lietotāja lomu (CR-5, tikai vadītājs)
+      description: |
+        Jauns lietotājs vienmēr ir `darbinieks`. Lomu maina tikai vadītājs.
+        Ja izmaiņas rezultātā sistēmā nepaliktu neviena vadītāja — 409.
+      security:
+        - sesija: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LomasMaina'
+      responses:
+        '200':
+          description: Loma mainīta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lietotajs'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /macibu-rezims/loma:
+    post:
+      tags: [Lomas]
+      operationId: switchOwnRole
+      summary: Pārslēgt savu lomu mācību režīmā (CR-5, F9.12)
+      description: |
+        Pieejams tikai, ja serverim iestatīts `CRM_MACIBU_REZIMS=1`; citādi 403.
+        Ļauj izmēģināt abu lomu skatus.
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LomasMaina'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LomasMaina'
+      responses:
+        '200':
+          description: Loma pārslēgta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lietotajs'
+        '303':
+          description: (HTML forma) Loma pārslēgta, novirza uz `/panelis`
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /organizacijas:
+    get:
+      tags: [Organizācijas]
+      operationId: listOrganizations
+      summary: Organizāciju saraksts un meklēšana (CR-6)
+      description: |
+        Meklē nosaukuma daļu neatkarīgi no lielajiem burtiem un garumzīmēm
+        („riga” atrod „Rīga”). Bez rezultātiem — tukšs saraksts.
+      security:
+        - sesija: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Nosaukuma daļa
+          schema:
+            type: string
+            example: riga
+      responses:
+        '200':
+          description: Organizācijas, sakārtotas pēc nosaukuma
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organizacija'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Organizācijas]
+      operationId: createOrganization
+      summary: Izveidot organizāciju (CR-6)
+      description: Atbildīgais darbinieks ir izveidotājs.
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizacijaIevade'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrganizacijaIevade'
+      responses:
+        '201':
+          description: Organizācija izveidota
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizacija'
+        '303':
+          description: (HTML forma) Novirza uz organizācijas kartīti
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /organizacijas/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Organizācijas]
+      operationId: getOrganization
+      summary: Organizācijas kartīte (CR-6)
+      security:
+        - sesija: []
+      responses:
+        '200':
+          description: Organizācija
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizacija'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    patch:
+      tags: [Organizācijas]
+      operationId: updateOrganization
+      summary: Labot organizāciju (CR-6)
+      description: |
+        Maina tikai norādītos laukus. Labot var atbildīgais darbinieks vai vadītājs;
+        `atbildigais_id` drīkst mainīt tikai vadītājs. `reg_nr: null` dzēš numuru.
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizacijasLabojums'
+      responses:
+        '200':
+          description: Organizācija pēc izmaiņām
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizacija'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /mijiedarbibas:
+    get:
+      tags: [Mijiedarbības]
+      operationId: listInteractions
+      summary: Mijiedarbību saraksts (CR-7)
+      description: Darbiniekam — tikai savas, vadītājam — visas; jaunākās vispirms.
+      security:
+        - sesija: []
+      parameters:
+        - name: periods
+          in: query
+          required: false
+          description: "`sonedel` — tikai šīs nedēļas (pirmdiena–svētdiena, Europe/Riga) ieraksti"
+          schema:
+            type: string
+            enum: [sonedel]
+      responses:
+        '200':
+          description: Mijiedarbības
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mijiedarbiba'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Mijiedarbības]
+      operationId: createInteraction
+      summary: Pievienot mijiedarbību (CR-7)
+      description: |
+        Darbinieks vienmēr ir pieslēgtais lietotājs; pieprasījumā norādīts
+        `darbinieks_id` tiek ignorēts. Neeksistējoša organizācija — 422 (`NOT_FOUND`),
+        datums nākotnē — 422 (`FUTURE_DATE`).
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MijiedarbibaIevade'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MijiedarbibaIevade'
+      responses:
+        '201':
+          description: Mijiedarbība pievienota
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mijiedarbiba'
+        '303':
+          description: (HTML forma) Novirza uz organizācijas kartīti
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /organizacijas/{id}/mijiedarbibas:
+    get:
+      tags: [Mijiedarbības]
+      operationId: listOrganizationInteractions
+      summary: Organizācijas mijiedarbības (CR-7)
+      description: Visu darbinieku mijiedarbības ar organizāciju, jaunākās vispirms.
+      security:
+        - sesija: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Mijiedarbības
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mijiedarbiba'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /pieprasijumi:
+    get:
+      tags: [Pieprasījumi]
+      operationId: listRequests
+      summary: Pieprasījumu saraksts (CR-8)
+      description: Sakārtoti pēc termiņa. Darbiniekam — tikai savi, vadītājam — visi.
+      security:
+        - sesija: []
+      parameters:
+        - name: statuss
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/PieprasijumaStatuss'
+        - name: kavets
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Pieprasījumi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pieprasijums'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Pieprasījumi]
+      operationId: createRequest
+      summary: Izveidot pieprasījumu (CR-8)
+      description: |
+        Statuss vienmēr `Jauns`. Atbildīgais pēc noklusējuma ir izveidotājs;
+        citu atbildīgo var norādīt tikai vadītājs (citādi 403).
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PieprasijumsIevade'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PieprasijumsIevade'
+      responses:
+        '201':
+          description: Pieprasījums izveidots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pieprasijums'
+        '303':
+          description: (HTML forma) Novirza uz `/pieprasijumi`
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /pieprasijumi/{id}:
+    patch:
+      tags: [Pieprasījumi]
+      operationId: updateRequest
+      summary: Mainīt pieprasījumu (CR-8)
+      description: |
+        Maina tikai norādītos laukus. Mainīt var atbildīgais vai vadītājs;
+        `atbildigais_id` — tikai vadītājs. Statuss var atgriezties no `Atbildēts` uz `Darbā`.
+      security:
+        - sesija: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PieprasijumaLabojums'
+      responses:
+        '200':
+          description: Pieprasījums pēc izmaiņām
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pieprasijums'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /uzdevumi:
+    get:
+      tags: [Uzdevumi]
+      operationId: listTasks
+      summary: Uzdevumu saraksts (CR-9)
+      security:
+        - sesija: []
+      parameters:
+        - name: lidz_sodienai
+          in: query
+          required: false
+          description: "`true` — tikai neizpildītie ar termiņu šodien vai agrāk (Europe/Riga)"
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Uzdevumi; neizpildītie pirmie, tad pēc termiņa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Uzdevums'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Uzdevumi]
+      operationId: createTask
+      summary: Izveidot uzdevumu (CR-9)
+      description: |
+        Atbildīgais pēc noklusējuma ir izveidotājs. Darbinieks var izveidot uzdevumu
+        tikai sev (citādi 403); vadītājs var piešķirt jebkuram lietotājam.
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UzdevumsIevade'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UzdevumsIevade'
+      responses:
+        '201':
+          description: Uzdevums izveidots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Uzdevums'
+        '303':
+          description: (HTML forma) Novirza uz `/uzdevumi`
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /uzdevumi/{id}/izpildits:
+    post:
+      tags: [Uzdevumi]
+      operationId: completeTask
+      summary: Atzīmēt uzdevumu kā izpildītu (CR-9, F9.6)
+      description: |
+        Tikai uzdevuma atbildīgais (arī vadītājam svešs uzdevums — 403).
+        Atkārtota atzīmēšana neko nemaina. HTML formai — POST–redirect–GET:
+        303 uz lauka `atpakal` lietotnes iekšējo ceļu (noklusējums `/uzdevumi`)
+        ar `pazinojums=uzdevums-izpildits`.
+      security:
+        - sesija: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                atpakal:
+                  type: string
+                  example: /panelis
+      responses:
+        '200':
+          description: Uzdevums izpildīts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Uzdevums'
+        '303':
+          description: (HTML forma) Novirza atpakaļ
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /api/panelis:
+    get:
+      tags: [Vadības panelis]
+      operationId: getDashboard
+      summary: Vadības paneļa dati (CR-10)
+      description: |
+        Darbiniekam — tikai savi dati; vadītājam — visu darbinieku dati un
+        `aktivitate`. `uzdevumi` vienmēr ir paša lietotāja neizpildītie uzdevumi ar
+        termiņu šodien vai agrāk. `pieprasijumi` — kavētie un tie, kuru termiņš ir
+        3 dienās (bez `Atbildēts`). `mijiedarbibas` — 5 jaunākās, bez kopsavilkuma (N2).
+      security:
+        - sesija: []
+      responses:
+        '200':
+          description: Paneļa dati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Panelis'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /organizacijas/{id}/kontakti:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Kontaktpersonas]
+      operationId: listContacts
+      summary: Organizācijas kontaktpersonas (F2)
+      security:
+        - sesija: []
+      responses:
+        '200':
+          description: Kontaktpersonas pēc vārda
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Kontaktpersona'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Kontaktpersonas]
+      operationId: createContact
+      summary: Pievienot kontaktpersonu (F2)
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KontaktpersonaIevade'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/KontaktpersonaIevade'
+      responses:
+        '201':
+          description: Kontaktpersona pievienota
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kontaktpersona'
+        '303':
+          description: (HTML forma) Novirza uz organizācijas kartīti
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /kontakti/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags: [Kontaktpersonas]
+      operationId: replaceContact
+      summary: Labot kontaktpersonu (F2)
+      description: Aizstāj visus laukus; nenorādītie neobligātie lauki tiek notīrīti.
+      security:
+        - sesija: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KontaktpersonaIevade'
+      responses:
+        '200':
+          description: Labotā kontaktpersona
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kontaktpersona'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Kontaktpersonas]
+      operationId: deleteContact
+      summary: Dzēst kontaktpersonu (F2, N2)
+      description: Neatgriezeniska dzēšana; dati uzreiz pazūd arī no meklēšanas.
+      security:
+        - sesija: []
+      responses:
+        '204':
+          description: Dzēsts
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /meklet:
+    get:
+      tags: [Meklēšana]
+      operationId: search
+      summary: Meklēt pa visiem ierakstiem (F6)
+      security:
+        - sesija: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Meklējamais teksts; īsāks par 2 rakstzīmēm atgriež tukšus sarakstus
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rezultāti pa ierakstu veidiem
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeklesanasRezultati'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /parskats:
+    get:
+      tags: [Pārskats]
+      operationId: getManagerOverview
+      summary: Pārskats vadītājam (F7)
+      description: Tikai vadītājam. Mijiedarbības — izvēlētajā periodā; pieprasījumi un uzdevumi — pašreizējais stāvoklis.
+      security:
+        - sesija: []
+      parameters:
+        - name: dienas
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 366
+            default: 30
+      responses:
+        '200':
+          description: Pārskats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parskats'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
+  /prioritates:
+    get:
+      tags: [Prioritātes]
+      operationId: listPriorities
+      summary: Organizāciju prioritātes (MI-2)
+      description: Darbiniekam — organizācijas, kurām viņš ir atbildīgais; vadītājam — visas.
+      security:
+        - sesija: []
+      responses:
+        '200':
+          description: Organizācijas pēc punktiem dilstoši
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prioritate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ResursNavAtrasts'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
 components:
+  securitySchemes:
+    sesija:
+      type: apiKey
+      in: cookie
+      name: crm_sesija
+      description: Sesijas sīkdatne pēc `POST /auth/login` (CR-4)
+
   schemas:
     Health:
       type: object
@@ -216,6 +1189,534 @@ components:
       enum: [RECEIVED, IN_PROGRESS, FORWARDED, ANSWERED, WITHDRAWN]
       example: RECEIVED
 
+    Lietotajs:
+      type: object
+      description: CRM lietotājs (CR-4)
+      required: [id, vards, epasts, loma]
+      properties:
+        id:
+          type: integer
+          example: 1
+        vards:
+          type: string
+          example: Anna Paraugs
+        epasts:
+          type: string
+          format: email
+          example: anna@example.com
+        loma:
+          $ref: '#/components/schemas/Loma'
+
+    Loma:
+      type: string
+      description: Lietotāja loma (N3, CR-5)
+      enum: [darbinieks, vaditajs]
+      example: darbinieks
+
+    LomasMaina:
+      type: object
+      required: [loma]
+      properties:
+        loma:
+          $ref: '#/components/schemas/Loma'
+
+    Registracija:
+      type: object
+      required: [vards, epasts, parole]
+      properties:
+        vards:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Anna Paraugs
+        epasts:
+          type: string
+          format: email
+          maxLength: 254
+          example: anna@example.com
+        parole:
+          type: string
+          format: password
+          minLength: 12
+          maxLength: 256
+
+    Pieslegsanas:
+      type: object
+      required: [epasts, parole]
+      properties:
+        epasts:
+          type: string
+          format: email
+          example: anna@example.com
+        parole:
+          type: string
+          format: password
+
+    PieslegsanasAtbilde:
+      type: object
+      required: [lietotajs]
+      properties:
+        lietotajs:
+          $ref: '#/components/schemas/Lietotajs'
+
+    Organizacija:
+      type: object
+      required: [id, nosaukums, reg_nr, atbildigais_id, atbildigais_vards]
+      properties:
+        id:
+          type: integer
+          example: 1
+        nosaukums:
+          type: string
+          example: SIA Ezermalas Koks
+        reg_nr:
+          type: string
+          nullable: true
+          example: '40003000001'
+        atbildigais_id:
+          type: integer
+          example: 2
+        atbildigais_vards:
+          type: string
+          example: Darbiniece Viena
+
+    OrganizacijaIevade:
+      type: object
+      required: [nosaukums]
+      properties:
+        nosaukums:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Atstarpes sākumā un beigās tiek noņemtas; tikai atstarpes — 422
+        reg_nr:
+          type: string
+          nullable: true
+          maxLength: 20
+          description: Reģistrācijas numurs; unikāls (dublikāts — 409)
+
+    OrganizacijasLabojums:
+      type: object
+      minProperties: 1
+      properties:
+        nosaukums:
+          type: string
+          minLength: 1
+          maxLength: 200
+        reg_nr:
+          type: string
+          nullable: true
+          maxLength: 20
+        atbildigais_id:
+          type: integer
+          description: Tikai vadītājs; neeksistējošs lietotājs — 422
+
+    MijiedarbibasVeids:
+      type: string
+      enum: [zvans, e-pasts, tikšanās]
+      example: zvans
+
+    MijiedarbibaIevade:
+      type: object
+      required: [datums, veids, organizacija_id]
+      properties:
+        datums:
+          type: string
+          format: date
+          description: Ne vēlāk kā šodien (Europe/Riga)
+          example: '2026-10-14'
+        veids:
+          $ref: '#/components/schemas/MijiedarbibasVeids'
+        organizacija_id:
+          type: integer
+          example: 1
+        kopsavilkums:
+          type: string
+          maxLength: 2000
+          default: ''
+
+    Mijiedarbiba:
+      type: object
+      required: [id, datums, veids, organizacija_id, organizacijas_nosaukums, darbinieks_id, darbinieka_vards, kopsavilkums]
+      properties:
+        id:
+          type: integer
+        datums:
+          type: string
+          format: date
+          example: '2026-10-14'
+        veids:
+          $ref: '#/components/schemas/MijiedarbibasVeids'
+        organizacija_id:
+          type: integer
+        organizacijas_nosaukums:
+          type: string
+          example: SIA Ezermalas Koks
+        darbinieks_id:
+          type: integer
+        darbinieka_vards:
+          type: string
+          example: Darbiniece Viena
+        kopsavilkums:
+          type: string
+        mi_kopsavilkums:
+          type: string
+          nullable: true
+          description: MI-1 kopsavilkums; tikai pēc darbinieka apstiprinājuma, marķēts „Ģenerēts ar MI”
+        mi_nakamais_solis:
+          type: string
+          nullable: true
+          description: MI-1 ieteiktais nākamais solis; tikai pēc darbinieka apstiprinājuma
+
+    PieprasijumaStatuss:
+      type: string
+      enum: [Jauns, Darbā, Atbildēts]
+      example: Darbā
+
+    PieprasijumsIevade:
+      type: object
+      required: [organizacija_id, apraksts, termins]
+      properties:
+        organizacija_id:
+          type: integer
+        apraksts:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        termins:
+          type: string
+          format: date
+          example: '2026-10-20'
+        atbildigais_id:
+          type: integer
+          description: Tikai vadītājs var norādīt citu lietotāju
+
+    PieprasijumaLabojums:
+      type: object
+      minProperties: 1
+      properties:
+        apraksts:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        termins:
+          type: string
+          format: date
+        statuss:
+          $ref: '#/components/schemas/PieprasijumaStatuss'
+        atbildigais_id:
+          type: integer
+
+    Pieprasijums:
+      type: object
+      required: [id, organizacija_id, organizacijas_nosaukums, apraksts, termins, statuss, atbildigais_id, atbildiga_vards, kavets]
+      properties:
+        id:
+          type: integer
+        organizacija_id:
+          type: integer
+        organizacijas_nosaukums:
+          type: string
+        apraksts:
+          type: string
+        termins:
+          type: string
+          format: date
+        statuss:
+          $ref: '#/components/schemas/PieprasijumaStatuss'
+        atbildigais_id:
+          type: integer
+        atbildiga_vards:
+          type: string
+        kavets:
+          type: boolean
+          description: Termiņš pirms šodienas un statuss nav `Atbildēts`
+
+    UzdevumsIevade:
+      type: object
+      required: [nosaukums, termins]
+      properties:
+        nosaukums:
+          type: string
+          minLength: 1
+          maxLength: 200
+        termins:
+          type: string
+          format: date
+          example: '2026-10-14'
+        organizacija_id:
+          type: integer
+          nullable: true
+        atbildigais_id:
+          type: integer
+          description: Tikai vadītājs var norādīt citu lietotāju
+        atgadinat:
+          type: string
+          format: date
+          nullable: true
+          description: Atgādinājuma datums (F5); ne vēlāk par termiņu
+
+    Uzdevums:
+      type: object
+      required: [id, nosaukums, termins, izpildits, atbildigais_id, atbildiga_vards, organizacija_id, organizacijas_nosaukums]
+      properties:
+        id:
+          type: integer
+        nosaukums:
+          type: string
+        termins:
+          type: string
+          format: date
+        izpildits:
+          type: boolean
+        atbildigais_id:
+          type: integer
+        atbildiga_vards:
+          type: string
+        organizacija_id:
+          type: integer
+          nullable: true
+        organizacijas_nosaukums:
+          type: string
+          nullable: true
+        atgadinat:
+          type: string
+          format: date
+          nullable: true
+        atgadinajums_aktivs:
+          type: boolean
+          description: Neizpildīts un atgādinājuma datums ir pienācis
+
+    Panelis:
+      type: object
+      required: [lietotajs, sodien, raditaji, uzdevumi, atgadinajumi, pieprasijumi, mijiedarbibas, aktivitate]
+      properties:
+        lietotajs:
+          $ref: '#/components/schemas/Lietotajs'
+        sodien:
+          type: string
+          format: date
+          description: Šodiena laika joslā Europe/Riga
+        raditaji:
+          type: object
+          required: [uzdevumi_sodien, kaveti_pieprasijumi, pieprasijumi_darba, mijiedarbibas_sonedel]
+          properties:
+            uzdevumi_sodien:
+              type: integer
+            kaveti_pieprasijumi:
+              type: integer
+            pieprasijumi_darba:
+              type: integer
+            mijiedarbibas_sonedel:
+              type: integer
+        uzdevumi:
+          type: array
+          items:
+            $ref: '#/components/schemas/Uzdevums'
+        atgadinajumi:
+          type: array
+          description: Paša lietotāja neizpildītie uzdevumi, kuru atgādinājuma datums ir pienācis (F5)
+          items:
+            $ref: '#/components/schemas/Uzdevums'
+        pieprasijumi:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pieprasijums'
+        mijiedarbibas:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/PanelaMijiedarbiba'
+        aktivitate:
+          type: array
+          nullable: true
+          description: Tikai vadītājam; darbiniekam `null`
+          items:
+            $ref: '#/components/schemas/DarbiniekaAktivitate'
+
+    PanelaMijiedarbiba:
+      type: object
+      description: Mijiedarbība bez kopsavilkuma teksta (N2)
+      required: [id, datums, veids, organizacija_id, organizacijas_nosaukums, darbinieks_id, darbinieka_vards]
+      properties:
+        id:
+          type: integer
+        datums:
+          type: string
+          format: date
+        veids:
+          $ref: '#/components/schemas/MijiedarbibasVeids'
+        organizacija_id:
+          type: integer
+        organizacijas_nosaukums:
+          type: string
+        darbinieks_id:
+          type: integer
+        darbinieka_vards:
+          type: string
+
+    DarbiniekaAktivitate:
+      type: object
+      required: [darbinieks_id, vards, mijiedarbibas, atverti_pieprasijumi, kaveti_pieprasijumi]
+      properties:
+        darbinieks_id:
+          type: integer
+        vards:
+          type: string
+        mijiedarbibas:
+          type: integer
+          description: Mijiedarbības pēdējās 7 dienās (ieskaitot šodienu)
+        atverti_pieprasijumi:
+          type: integer
+        kaveti_pieprasijumi:
+          type: integer
+
+    KontaktpersonaIevade:
+      type: object
+      required: [vards]
+      properties:
+        vards:
+          type: string
+          minLength: 1
+          maxLength: 100
+        amats:
+          type: string
+          nullable: true
+          maxLength: 100
+        epasts:
+          type: string
+          format: email
+          nullable: true
+        talrunis:
+          type: string
+          nullable: true
+          pattern: '^\+?[0-9 ()-]+$'
+          maxLength: 30
+
+    Kontaktpersona:
+      type: object
+      required: [id, organizacija_id, vards, amats, epasts, talrunis]
+      properties:
+        id:
+          type: integer
+        organizacija_id:
+          type: integer
+        vards:
+          type: string
+        amats:
+          type: string
+          nullable: true
+        epasts:
+          type: string
+          nullable: true
+        talrunis:
+          type: string
+          nullable: true
+
+    MeklesanasRezultati:
+      type: object
+      required: [q, organizacijas, kontaktpersonas, mijiedarbibas, pieprasijumi, uzdevumi]
+      properties:
+        q:
+          type: string
+        organizacijas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Organizacija'
+        kontaktpersonas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Kontaktpersona'
+        mijiedarbibas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mijiedarbiba'
+        pieprasijumi:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pieprasijums'
+        uzdevumi:
+          type: array
+          items:
+            $ref: '#/components/schemas/Uzdevums'
+
+    DarbiniekaRaditaji:
+      type: object
+      required: [darbinieks_id, vards, zvani, epasti, tiksanas, mijiedarbibas, atverti_pieprasijumi, kaveti_pieprasijumi, neizpilditi_uzdevumi, kaveti_uzdevumi]
+      properties:
+        darbinieks_id:
+          type: integer
+          description: Rindai „Kopā” — 0
+        vards:
+          type: string
+        zvani:
+          type: integer
+        epasti:
+          type: integer
+        tiksanas:
+          type: integer
+        mijiedarbibas:
+          type: integer
+        atverti_pieprasijumi:
+          type: integer
+        kaveti_pieprasijumi:
+          type: integer
+        neizpilditi_uzdevumi:
+          type: integer
+        kaveti_uzdevumi:
+          type: integer
+
+    Parskats:
+      type: object
+      required: ['no', lidz, dienas, darbinieki, kopa]
+      properties:
+        'no':
+          type: string
+          format: date
+        lidz:
+          type: string
+          format: date
+        dienas:
+          type: integer
+        darbinieki:
+          type: array
+          items:
+            $ref: '#/components/schemas/DarbiniekaRaditaji'
+        kopa:
+          $ref: '#/components/schemas/DarbiniekaRaditaji'
+
+    Prioritate:
+      type: object
+      required: [organizacija_id, nosaukums, atbildigais_vards, mijiedarbibas, tiksanas, atverti_pieprasijumi, atbildeti_pieprasijumi, pedeja_mijiedarbiba, punkti, pamatojums]
+      properties:
+        organizacija_id:
+          type: integer
+        nosaukums:
+          type: string
+        atbildigais_vards:
+          type: string
+        mijiedarbibas:
+          type: integer
+          description: Pēdējās 90 dienās
+        tiksanas:
+          type: integer
+          description: Pēdējās 90 dienās
+        atverti_pieprasijumi:
+          type: integer
+        atbildeti_pieprasijumi:
+          type: integer
+        pedeja_mijiedarbiba:
+          type: string
+          format: date
+          nullable: true
+        punkti:
+          type: integer
+        pamatojums:
+          type: array
+          description: Katra rādītāja ieguldījums punktos, cilvēkam saprotamā tekstā
+          items:
+            type: string
+
     Error:
       type: object
       description: Vienota kļūdu shēma visiem galapunktiem
@@ -248,6 +1749,79 @@ components:
                     example: INVALID_FORMAT
 
   responses:
+    BadRequest:
+      description: Pieprasījuma ķermenis nav derīgs JSON objekts
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: BAD_REQUEST
+              message: Pieprasījuma ķermenis nav derīgs JSON
+    Unauthorized:
+      description: Nav pieslēgts vai nepareizi pieslēgšanās dati. HTML pieprasījumu novirza uz `/auth/login` (303).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Nepieciešama pieslēgšanās
+    Forbidden:
+      description: Lietotāja lomai vai piederībai šī darbība nav atļauta
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: FORBIDDEN
+              message: Darbība nav atļauta
+    ResursNavAtrasts:
+      description: Resurss nav atrasts
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NOT_FOUND
+              message: Nav atrasts
+    Conflict:
+      description: Konflikts ar esošiem datiem
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: CONFLICT
+              message: Lietotājs ar šo e-pastu jau ir reģistrēts
+    ValidationFailed:
+      description: Lauku vērtības nav derīgas. Dati netiek saglabāti.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Ievades dati nav derīgi
+              details:
+                - field: parole
+                  issue: TOO_SHORT
+    ServerError:
+      description: Servera kļūda
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: Servera kļūda
     ValidationError:
       description: Kļūdains pieprasījums. Iesniegums netiek saglabāts.
       content:

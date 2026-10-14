@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block virsraksts %}Vadības panelis{% endblock %}
+{% block saturs %}
+{% include "panelis/galvene.html" %}
+<div class="zina" role="status">{% if izpildits_pazinojums %}Uzdevums atzīmēts kā izpildīts.{% endif %}</div>
+{% include "panelis/raditaji.html" %}
+<div class="panelis">
+  {% include "panelis/uzdevumi.html" %}
+  {% include "panelis/atgadinajumi.html" %}
+  {% include "panelis/pieprasijumi.html" %}
+  {% include "panelis/mijiedarbibas.html" %}
+  {% include "panelis/atras_darbibas.html" %}
+  {% if dati.aktivitate is not none %}{% include "panelis/aktivitate.html" %}{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block virsraksts %}Organizācijas{% endblock %}
+{% block saturs %}
+<h1>Organizācijas</h1>
+<p><a class="poga" href="/organizacijas/jauna">Jauna organizācija</a></p>
+<form method="get" action="/organizacijas" role="search">
+  <div class="lauks">
+    <label for="l-q">Meklēt pēc nosaukuma</label>
+    <input id="l-q" name="q" type="search" value="{{ q }}">
+  </div>
+  <button type="submit">Meklēt</button>
+</form>
+{% if organizacijas %}
+<div class="tabulas-ietvars">
+  <table>
+    <caption>{% if q %}Meklēšanas „{{ q }}” rezultāti: {{ organizacijas | length }}{% else %}Visas organizācijas: {{ organizacijas | length }}{% endif %}</caption>
+    <thead>
+      <tr><th scope="col">Nosaukums</th><th scope="col">Reģ. nr.</th><th scope="col">Atbildīgais</th></tr>
+    </thead>
+    <tbody>
+      {% for o in organizacijas %}
+      <tr>
+        <th scope="row"><a href="/organizacijas/{{ o.id }}">{{ o.nosaukums }}</a></th>
+        <td>{{ o.reg_nr or "—" }}</td>
+        <td>{{ o.atbildigais_vards }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% elif q %}
+<p class="tukss" role="status">Pēc „{{ q }}” nav atrasta neviena organizācija. Pārbaudiet rakstību vai <a href="/organizacijas/jauna">izveidojiet jaunu organizāciju</a>.</p>
+{% else %}
+<p class="tukss">Organizāciju vēl nav. <a href="/organizacijas/jauna">Izveidojiet pirmo</a>.</p>
+{% endif %}
+{% endblock %}

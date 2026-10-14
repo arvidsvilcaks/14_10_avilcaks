@@ -1,0 +1,9 @@
+<section class="raditaji" aria-labelledby="raditaji-virsraksts">
+  <h2 id="raditaji-virsraksts">{% if dati.lietotajs.ir_vaditajs %}Rādītāji visā sistēmā{% else %}Mani rādītāji{% endif %}</h2>
+  <ul>
+    <li><a href="/uzdevumi?lidz_sodienai=true">{{ dati.raditaji.uzdevumi_sodien | skaits("uzdevums šodien", "uzdevumi šodien") }}</a></li>
+    <li><a href="/pieprasijumi?kavets=true">{{ dati.raditaji.kaveti_pieprasijumi | skaits("kavētais pieprasījums", "kavētie pieprasījumi") }}</a></li>
+    <li><a href="/pieprasijumi?statuss=Darb%C4%81">{{ dati.raditaji.pieprasijumi_darba | skaits("pieprasījums statusā „Darbā”", "pieprasījumi statusā „Darbā”") }}</a></li>
+    <li><a href="/mijiedarbibas?periods=sonedel">{{ dati.raditaji.mijiedarbibas_sonedel | skaits("mijiedarbība šonedēļ", "mijiedarbības šonedēļ") }}</a></li>
+  </ul>
+</section>

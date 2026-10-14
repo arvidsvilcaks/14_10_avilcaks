@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% set virsraksts_teksts = "Uzdevumi līdz šodienai" if lidz_sodienai else "Uzdevumi" %}
+{% block virsraksts %}{{ virsraksts_teksts }}{% endblock %}
+{% block saturs %}
+<h1>{{ virsraksts_teksts }}</h1>
+<div class="zina" role="status">{% if izpildits_pazinojums %}Uzdevums atzīmēts kā izpildīts.{% endif %}</div>
+<p>
+  <a class="poga" href="/uzdevumi/jauns">Jauns uzdevums</a>
+  {% if lidz_sodienai %}<a href="/uzdevumi">Rādīt visus</a>{% else %}<a href="/uzdevumi?lidz_sodienai=true">Tikai neizpildītie līdz šodienai</a>{% endif %}
+</p>
+{% if uzdevumi %}
+{% set paraksts = ("Visu darbinieku" if lietotajs.ir_vaditajs else "Mani") ~ " uzdevumi: " ~ (uzdevumi | length) ~ ", sakārtoti pēc termiņa" %}
+{% set ar_atbildigo = lietotajs.ir_vaditajs %}{% set atpakal = request.url.path ~ ("?lidz_sodienai=true" if lidz_sodienai else "") %}
+{% include "uzdevumi/tabula.html" %}
+{% else %}
+<p class="tukss">{% if lidz_sodienai %}Neizpildītu uzdevumu līdz šodienai nav.{% else %}Uzdevumu vēl nav.{% endif %}</p>
+{% endif %}
+{% endblock %}

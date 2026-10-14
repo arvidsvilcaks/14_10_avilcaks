@@ -1,0 +1,10 @@
+<section class="bloks" aria-labelledby="atgadinajumi-virsraksts">
+  <h2 id="atgadinajumi-virsraksts">Atgādinājumi</h2>
+  {% if dati.atgadinajumi %}
+  {% set uzdevumi = dati.atgadinajumi %}{% set paraksts = "Neizpildītie uzdevumi, kuru atgādinājuma datums ir pienācis" %}
+  {% set ar_atbildigo = false %}{% set atpakal = "/panelis" %}
+  {% include "uzdevumi/tabula.html" %}
+  {% else %}
+  <p class="tukss">Atgādinājumu nav.</p>
+  {% endif %}
+</section>

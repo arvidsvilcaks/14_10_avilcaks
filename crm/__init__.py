@@ -1,0 +1,1 @@
+"""Ezermalas CRM — FastAPI lietotne."""
